@@ -1,0 +1,1544 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RawReel</title>
+<meta name="description" content="Turn your camera footage into a cinematic, beat-synced reel for Instagram and YouTube Shorts. Everything runs on your device.">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0c'/%3E%3Cpath d='M24 18l24 14-24 14z' fill='%23f5b84b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@600&family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0c; --card:#141418; --card2:#1b1b21; --line:#2a2a33; --text:#f2efe9; --muted:#9a96a0;
+  --accent:#f5b84b; --accent2:#e8553a; --ok:#5cc98a; --warn:#f0a35a;
+  --hook:#e8553a; --build:#4b8df5; --hero:#f5b84b; --post:#a46cf0; --outro:#5cc98a;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;-webkit-text-size-adjust:100%}
+body{padding:0 16px 48px;padding-bottom:calc(48px + env(safe-area-inset-bottom))}
+main{max-width:640px;margin:0 auto}
+header{max-width:640px;margin:0 auto;padding:28px 0 12px}
+.brand{font:400 44px/1 "Bebas Neue",Impact,sans-serif;letter-spacing:.08em}
+.brand span{color:var(--accent)}
+.tag{color:var(--muted);margin:6px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+h2 b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#1a1205;font-size:14px}
+h2 small{color:var(--muted);font-weight:400}
+.drop{display:block;border:1.5px dashed #3a3a46;border-radius:12px;padding:18px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .2s}
+.drop:hover{border-color:var(--accent);color:var(--text)}
+.drop input{display:none}
+.drop.small{padding:12px}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px}
+.clip{position:relative;background:var(--card2);border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.clip img,.clip .ph{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#000}
+.clip .meta{padding:6px 8px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clip .meta b{color:var(--text);font-weight:600}
+.clip .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:15px;cursor:pointer}
+.clip .badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.65);border-radius:6px;padding:1px 6px;font-size:11px}
+textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;resize:vertical;min-height:84px}
+textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 10px;font-size:12.5px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.intent{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:4px}
+.pill{font-size:12px;border-radius:999px;padding:3px 9px;background:#262019;color:var(--accent);border:1px solid #4a3a1c}
+.pill.dim{background:var(--card2);color:var(--muted);border-color:var(--line)}
+details.adv{margin-top:12px}
+details.adv summary{cursor:pointer;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.grid label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+select{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;width:100%}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:12px;padding:12px 16px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer;flex:1;min-height:46px}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a0d05;border:0}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.progress{margin-top:12px}
+.progress .bar{height:8px;border-radius:99px;background:var(--card2);overflow:hidden}
+.progress .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .15s}
+.progress .ptext{display:block;font-size:13px;color:var(--muted);margin-top:6px}
+.hidden{display:none!important}
+.planhead{font-size:14px;color:var(--muted);margin:14px 0 8px}
+.planhead b{color:var(--text)}
+.timeline{display:flex;height:34px;border-radius:8px;overflow:hidden;gap:2px}
+.timeline div{min-width:3px;display:grid;place-items:center;font-size:10px;font-weight:800;color:rgba(0,0,0,.75);overflow:hidden;white-space:nowrap}
+.sec-hook{background:var(--hook)} .sec-build{background:var(--build)} .sec-hero{background:var(--hero)} .sec-post{background:var(--post)} .sec-outro{background:var(--outro)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+ol.shots{list-style:none;padding:0;margin:12px 0 0;max-height:260px;overflow:auto;font-size:12.5px;border-top:1px solid var(--line)}
+ol.shots li{padding:7px 2px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline}
+ol.shots li .s{flex:none;width:52px;font-weight:800;font-size:10.5px;letter-spacing:.04em}
+ol.shots li .d{color:var(--muted)}
+.warn{font-size:13px;color:var(--warn);margin:8px 0 0;padding-left:18px}
+.warn li{margin:2px 0}
+.screen{background:#000;border-radius:12px;overflow:hidden;display:grid;place-items:center;max-height:70vh}
+.screen canvas,.screen video{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+a.btn{text-decoration:none;text-align:center;display:inline-grid;place-items:center}
+#vidpool{position:fixed;right:0;bottom:0;width:2px;height:2px;overflow:hidden;opacity:.01;pointer-events:none;z-index:-1}
+#vidpool video{width:2px;height:2px}
+.err{color:#ff8a7a;font-size:14px;margin-top:10px;white-space:pre-wrap}
+footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text-align:center}
+@media (max-width:380px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">RAW<span>REEL</span></div>
+  <p class="tag">अपनी कैमरा वीडियो डालो, प्रॉम्प्ट लिखो, और सिनेमैटिक रील पाओ। सारी प्रोसेसिंग आपके फ़ोन/कंप्यूटर पर होती है, कोई वीडियो अपलोड नहीं होती।</p>
+</header>
+<main>
+  <section class="card">
+    <h2><b>1</b> वीडियो क्लिप्स <small>Clips</small></h2>
+    <label class="drop"><input type="file" id="clipInput" accept="video/*" multiple>+ वीडियो चुनें (एक या ज़्यादा)<br><small>Tip: 4K या vertical (9:16) में शूट करो, close-ups ज़्यादा sharp आएँगे</small></label>
+    <div id="clipList" class="clips"></div>
+  </section>
+
+  <section class="card">
+    <h2><b>2</b> म्यूज़िक <small>optional · beat-sync</small></h2>
+    <label class="drop small"><input type="file" id="musicInput" accept="audio/*,video/*">+ गाना चुनें (cuts बीट पर लगेंगे)</label>
+    <div id="musicInfo" class="note"></div>
+    <p class="note">म्यूज़िक नहीं डाला तो ऐप खुद एक cinematic background score और sound effects बनाएगा।</p>
+  </section>
+
+  <section class="card">
+    <h2><b>3</b> प्रॉम्प्ट <small>Prompt</small></h2>
+    <textarea id="prompt" rows="3" placeholder='जैसे: Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"'></textarea>
+    <div class="chips" id="examples"></div>
+    <div id="intent" class="intent"></div>
+    <details class="adv">
+      <summary>Settings (प्रॉम्प्ट से auto set होती हैं)</summary>
+      <div class="grid">
+        <label>Style<select id="styleSel"><option value="auto">Auto (प्रॉम्प्ट से)</option></select></label>
+        <label>Duration<select id="durSel"><option value="auto">Auto (प्रॉम्प्ट से / 15s)</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
+        <label>Format<select id="aspectSel"><option value="9:16">9:16 Reels / Shorts</option><option value="4:5">4:5 Feed</option><option value="1:1">1:1 Square</option><option value="16:9">16:9 YouTube</option></select></label>
+        <label>Quality<select id="qualSel"><option value="1080">1080p</option><option value="720">720p (fast)</option></select></label>
+        <label>Frame rate<select id="fpsSel"><option value="30">30 fps</option><option value="24">24 fps (film)</option><option value="60">60 fps</option></select></label>
+        <label>Cinema bars<select id="barsSel"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
+        <label>Original clip sound<select id="origSel"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
+        <label>Sound effects<select id="sfxSel"><option value="on">On (whoosh, boom)</option><option value="off">Off</option></select></label>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2><b>4</b> एडिट प्लान <small>Director</small></h2>
+    <button id="planBtn" class="btn primary" style="width:100%">🎬 Analyze &amp; Plan</button>
+    <div id="progress" class="progress hidden"><div class="bar"><i></i></div><span class="ptext"></span></div>
+    <div id="errBox" class="err hidden"></div>
+    <div id="plan" class="hidden">
+      <div class="planhead" id="planHead"></div>
+      <div class="timeline" id="timeline"></div>
+      <div class="legend"><span><i class="sec-hook"></i>Hook</span><span><i class="sec-build"></i>Build</span><span><i class="sec-hero"></i>Hero (speed ramp)</span><span><i class="sec-post"></i>Climax</span><span><i class="sec-outro"></i>Outro</span></div>
+      <ul class="warn" id="warnList"></ul>
+      <ol class="shots" id="shots"></ol>
+      <div class="row">
+        <button id="rerollBtn" class="btn">🎲 दूसरा वर्ज़न</button>
+        <button id="renderBtn" class="btn primary">⚡ Render Reel</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="stage">
+    <h2><b>5</b> आपकी रील <small>Output</small></h2>
+    <div class="screen" id="screen"></div>
+    <div id="renderProgress" class="progress"><div class="bar"><i></i></div><span class="ptext"></span></div>
+    <div class="row" id="renderCtl"><button id="cancelBtn" class="btn">Cancel</button></div>
+    <div class="row hidden" id="resultActions">
+      <a id="dlLink" class="btn primary" download>⬇ Download MP4</a>
+      <button id="shareBtn" class="btn">📤 Share</button>
+    </div>
+    <p class="note" id="renderNote">रेंडर होते समय ऐप खुला रखें और स्क्रीन ऑन रखें।</p>
+  </section>
+</main>
+<footer>RawReel · on-device video editing · no uploads</footer>
+<div id="vidpool" aria-hidden="true"></div>
+
+<script src="vendor/mp4-muxer.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   Utilities
+   ============================================================ */
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => t * t * (3 - 2 * t);
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmtT = (t) => { const m = Math.floor(t / 60); const s = t - m * 60; return `${m}:${s.toFixed(1).padStart(4, '0')}`; };
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function pickWeighted(rng, entries) {
+  let tot = 0; for (const [, w] of entries) tot += Math.max(0, w);
+  if (tot <= 0) return entries[0][0];
+  let r = rng() * tot;
+  for (const [k, w] of entries) { r -= Math.max(0, w); if (r <= 0) return k; }
+  return entries[entries.length - 1][0];
+}
+function percentile(arr, p) { if (!arr.length) return 0; const a = [...arr].sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(p * (a.length - 1)))]; }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* ============================================================
+   Styles (looks) — grade, pacing, transitions, typography
+   ============================================================ */
+const STYLES = {
+  blockbuster: { label: 'Blockbuster · Teal & Orange', bpm: 110, cut: 2, baseSpeed: 1, motionPref: 0.55, shake: 0.6, letterbox: true, font: 'bebas', drift: 1, chrono: false, chord: 'minor',
+    grade: { exposure: 1.02, contrast: 0.45, sat: 1.12, temp: 0.05, tint: 0, fade: 0.03, shadow: [-0.05, 0.04, 0.10], high: [0.10, 0.04, -0.06], glow: 0.22, grain: 0.035, vignette: 0.42, bw: 0 },
+    trans: { cut: 6, whip: 2, zoom: 2, flash: 1, rgb: 0, dip: 0 }, heroIn: 'flash', outroIn: 'dip' },
+  moody: { label: 'Moody · Dark & Emotional', bpm: 84, cut: 4, baseSpeed: 0.85, motionPref: 0.3, shake: 0.2, letterbox: true, font: 'serif', drift: 1, chrono: true, chord: 'minor',
+    grade: { exposure: 0.94, contrast: 0.35, sat: 0.72, temp: -0.25, tint: 0.05, fade: 0.07, shadow: [-0.04, 0.02, 0.08], high: [0.02, 0.02, 0.0], glow: 0.18, grain: 0.05, vignette: 0.55, bw: 0 },
+    trans: { cut: 6, whip: 0, zoom: 1, flash: 0, rgb: 0, dip: 2 }, heroIn: 'zoom', outroIn: 'dip' },
+  energetic: { label: 'Hype · Fast & Energetic', bpm: 128, cut: 1, baseSpeed: 1, motionPref: 0.85, shake: 1, letterbox: false, font: 'bebas', drift: 0, chrono: false, chord: 'minor',
+    grade: { exposure: 1.03, contrast: 0.5, sat: 1.25, temp: 0, tint: 0, fade: 0, shadow: [-0.02, 0, 0.06], high: [0.06, 0.02, -0.04], glow: 0.15, grain: 0.02, vignette: 0.3, bw: 0 },
+    trans: { cut: 4, whip: 3, zoom: 3, flash: 2, rgb: 2, dip: 0 }, heroIn: 'zoom', outroIn: 'whip' },
+  dreamy: { label: 'Dreamy · Romantic & Soft', bpm: 76, cut: 4, baseSpeed: 0.7, motionPref: 0.25, shake: 0, letterbox: false, font: 'serif', drift: 1, chrono: true, chord: 'major',
+    grade: { exposure: 1.06, contrast: 0.15, sat: 0.92, temp: 0.22, tint: 0.06, fade: 0.09, shadow: [0.03, 0.0, 0.04], high: [0.08, 0.04, 0.0], glow: 0.55, grain: 0.02, vignette: 0.3, bw: 0 },
+    trans: { cut: 3, whip: 0, zoom: 0, flash: 3, rgb: 0, dip: 2 }, heroIn: 'flash', outroIn: 'dip' },
+  vintage: { label: 'Vintage · Film Look', bpm: 92, cut: 2, baseSpeed: 0.95, motionPref: 0.4, shake: 0.3, letterbox: true, font: 'classic', drift: 1, chrono: true, chord: 'major',
+    grade: { exposure: 1.0, contrast: 0.3, sat: 0.8, temp: 0.3, tint: -0.04, fade: 0.12, shadow: [0.04, 0.04, 0.0], high: [0.08, 0.05, -0.02], glow: 0.3, grain: 0.09, vignette: 0.6, bw: 0 },
+    trans: { cut: 5, whip: 1, zoom: 0, flash: 2, rgb: 0, dip: 2 }, heroIn: 'flash', outroIn: 'dip' },
+  noir: { label: 'Noir · Black & White', bpm: 90, cut: 2, baseSpeed: 0.9, motionPref: 0.45, shake: 0.4, letterbox: true, font: 'classic', drift: 1, chrono: false, chord: 'minor',
+    grade: { exposure: 1.0, contrast: 0.6, sat: 1, temp: 0, tint: 0, fade: 0.03, shadow: [0, 0, 0], high: [0, 0, 0], glow: 0.2, grain: 0.08, vignette: 0.6, bw: 1 },
+    trans: { cut: 7, whip: 1, zoom: 1, flash: 1, rgb: 0, dip: 1 }, heroIn: 'flash', outroIn: 'dip' },
+  neon: { label: 'Neon Night · City', bpm: 120, cut: 2, baseSpeed: 1, motionPref: 0.65, shake: 0.6, letterbox: false, font: 'bebas', drift: 1, chrono: false, chord: 'minor',
+    grade: { exposure: 1.02, contrast: 0.45, sat: 1.3, temp: -0.15, tint: 0.2, fade: 0.02, shadow: [0.02, -0.04, 0.12], high: [0.10, -0.02, 0.08], glow: 0.5, grain: 0.03, vignette: 0.45, bw: 0 },
+    trans: { cut: 4, whip: 2, zoom: 2, flash: 1, rgb: 3, dip: 0 }, heroIn: 'zoom', outroIn: 'whip' },
+  nature: { label: 'Travel · Vivid & Clean', bpm: 100, cut: 2, baseSpeed: 0.95, motionPref: 0.45, shake: 0.2, letterbox: false, font: 'wide', drift: 1, chrono: true, chord: 'major',
+    grade: { exposure: 1.03, contrast: 0.3, sat: 1.18, temp: 0.08, tint: 0, fade: 0.02, shadow: [-0.02, 0.02, 0.05], high: [0.06, 0.04, 0], glow: 0.25, grain: 0.015, vignette: 0.3, bw: 0 },
+    trans: { cut: 5, whip: 2, zoom: 1, flash: 1, rgb: 0, dip: 1 }, heroIn: 'flash', outroIn: 'dip' },
+};
+for (const [k, s] of Object.entries(STYLES)) s.key = k;
+
+const FONTS = {
+  bebas: { css: (px) => `400 ${px}px "Bebas Neue", Impact, "Arial Narrow", sans-serif`, size: 0.15, upper: true, track: [0.5, 0.12] },
+  serif: { css: (px) => `italic 600 ${px}px "Playfair Display", Georgia, serif`, size: 0.095, upper: false, track: [0.18, 0.02] },
+  classic: { css: (px) => `600 ${px}px Cinzel, "Times New Roman", serif`, size: 0.085, upper: true, track: [0.45, 0.16] },
+  wide: { css: (px) => `800 ${px}px Inter, system-ui, sans-serif`, size: 0.075, upper: true, track: [0.6, 0.22] },
+};
+
+/* ============================================================
+   Prompt understanding (English + Hindi + Hinglish keywords)
+   ============================================================ */
+const STYLE_KW = {
+  blockbuster: ['cinematic', 'cinema', 'movie', 'film', 'blockbuster', 'epic', 'hollywood', 'bollywood', 'trailer', 'teal', 'orange', 'dramatic', 'सिनेमैटिक', 'सिनेमा', 'फिल्म', 'फ़िल्म', 'मूवी', 'धमाकेदार', 'बॉलीवुड', 'ड्रामैटिक'],
+  moody: ['moody', 'dark', 'sad', 'emotional', 'rain', 'rainy', 'lonely', 'alone', 'melancholy', 'उदास', 'इमोशनल', 'बारिश', 'अकेला', 'अकेले', 'डार्क', 'दर्द'],
+  energetic: ['energetic', 'energy', 'hype', 'gym', 'workout', 'fitness', 'sport', 'sports', 'dance', 'party', 'action', 'bike', 'rider', 'car', 'cars', 'drift', 'race', 'racing', 'power', 'जोश', 'जोशीली', 'जोशीला', 'पार्टी', 'डांस', 'जिम', 'एक्शन', 'बाइक', 'कार'],
+  dreamy: ['romantic', 'romance', 'love', 'wedding', 'couple', 'dreamy', 'soft', 'pre-wedding', 'prewedding', 'bride', 'groom', 'शादी', 'प्यार', 'रोमांटिक', 'कपल', 'दुल्हन', 'प्रेम', 'इश्क'],
+  vintage: ['vintage', 'retro', 'film look', '90s', '80s', '70s', 'nostalgia', 'nostalgic', 'kodak', 'old school', 'पुराना', 'पुरानी', 'रेट्रो', 'यादें'],
+  noir: ['black and white', 'black & white', 'b&w', 'bw', 'noir', 'monochrome', 'ब्लैक एंड व्हाइट', 'श्वेत श्याम'],
+  neon: ['night', 'neon', 'city', 'cyberpunk', 'club', 'lights', 'street', 'रात', 'नाइट', 'शहर', 'लाइट्स'],
+  nature: ['nature', 'travel', 'mountain', 'mountains', 'beach', 'trek', 'trip', 'vlog', 'sunset', 'sunrise', 'forest', 'river', 'goa', 'manali', 'ladakh', 'kashmir', 'पहाड़', 'पहाड', 'समुद्र', 'ट्रैवल', 'घूमना', 'सनसेट', 'प्रकृति', 'जंगल', 'नदी', 'ट्रिप'],
+};
+const FLAG_KW = {
+  slowmo: ['slow', 'slo-mo', 'slomo', 'slow-mo', 'slow motion', 'slowmo', 'स्लो', 'धीमा', 'धीमी', 'स्लो मोशन'],
+  fast: ['fast', 'quick', 'rapid', 'fast cuts', 'quick cuts', 'तेज़', 'तेज', 'फास्ट', 'जल्दी'],
+  close: ['close', 'close-up', 'closeup', 'close up', 'closeups', 'close-ups', 'detail', 'details', 'zoom', 'punch in', 'क्लोज', 'क्लोज़', 'ज़ूम', 'जूम', 'डिटेल'],
+  bars: ['letterbox', 'black bars', 'bars', 'widescreen', '2.39', 'anamorphic', 'cinema bars', 'बार्स'],
+  nobars: ['no bars', 'no letterbox', 'full screen', 'fullscreen', 'without bars'],
+  shake: ['shake', 'shaky', 'handheld', 'impact', 'punchy', 'झटका', 'शेक'],
+  story: ['story', 'journey', 'day in', 'timeline', 'कहानी', 'सफर', 'सफ़र', 'दिन'],
+  calm: ['calm', 'peaceful', 'relax', 'relaxing', 'aesthetic', 'smooth', 'शांत', 'सुकून'],
+  nosfx: ['no sfx', 'no sound effects', 'without sfx', 'without sound effects'],
+};
+function hasTerm(text, term) {
+  if (/^[\x00-\x7F]+$/.test(term)) {
+    const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9])${esc}([^a-z0-9]|$)`).test(text);
+  }
+  return text.includes(term);
+}
+function parsePrompt(raw) {
+  const original = String(raw || '');
+  const texts = [];
+  const quoteRe = /["“”«»]([^"“”«»\n]{1,48})["“”«»]/g;
+  let m;
+  while ((m = quoteRe.exec(original)) && texts.length < 4) { const t = m[1].trim(); if (t) texts.push(t); }
+  let text = original.replace(quoteRe, ' ').toLowerCase();
+  text = text.replace(/[०-९]/g, (d) => String('०१२३४५६७८९'.indexOf(d)));
+  const tags = [];
+  const scores = {};
+  for (const [k, list] of Object.entries(STYLE_KW)) {
+    scores[k] = 0;
+    for (const term of list) if (hasTerm(text, term)) { scores[k] += term.includes(' ') ? 2 : 1; tags.push(term); }
+  }
+  const f = {};
+  for (const [k, list] of Object.entries(FLAG_KW)) f[k] = list.some((term) => hasTerm(text, term));
+  let style = null; let best = 0;
+  for (const [k, v] of Object.entries(scores)) if (v > best) { best = v; style = k; }
+  let duration = null;
+  const dm = text.match(/(\d{1,2})\s*(?:s\b|sec\b|secs\b|second|seconds|सेकंड|सेकेंड|सेकण्ड)/);
+  if (dm) duration = clamp(parseInt(dm[1], 10), 6, 60);
+  return {
+    style, scores, texts, duration,
+    slowmo: f.slowmo ? 1 : 0,
+    pace: (f.fast ? 1 : 0) - (f.calm ? 1 : 0),
+    close: f.close ? 1 : 0,
+    letterbox: f.nobars ? false : f.bars ? true : null,
+    shake: f.shake,
+    chrono: f.story ? true : null,
+    sfx: !f.nosfx,
+    tags: [...new Set(tags)],
+    flags: Object.keys(f).filter((k) => f[k]),
+  };
+}
+
+/* ============================================================
+   App state
+   ============================================================ */
+const state = { clips: [], music: null, plan: null, seed: 1, busy: false, cancel: false, resultUrl: null, nextId: 1 };
+
+/* ============================================================
+   Video helpers
+   ============================================================ */
+function once(el, ev, ms = 8000) {
+  return new Promise((res, rej) => {
+    const t = setTimeout(() => { el.removeEventListener(ev, h); rej(new Error(`timeout waiting for ${ev}`)); }, ms);
+    const h = () => { clearTimeout(t); el.removeEventListener(ev, h); res(); };
+    el.addEventListener(ev, h);
+  });
+}
+function seekTo(v, t) {
+  const target = clamp(t, 0, Math.max(0, (v.duration || 0) - 0.001));
+  if (Math.abs(v.currentTime - target) < 0.0005 && v.readyState >= 2 && !v.seeking) return Promise.resolve();
+  return new Promise((res) => {
+    let done = false;
+    const fin = () => { if (done) return; done = true; v.removeEventListener('seeked', fin); clearTimeout(to); res(); };
+    const to = setTimeout(fin, 5000);
+    v.addEventListener('seeked', fin);
+    v.currentTime = target;
+  });
+}
+async function loadClip(file) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto';
+  v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+  v.src = url;
+  $('#vidpool').appendChild(v);
+  try {
+    await new Promise((res, rej) => {
+      v.addEventListener('loadedmetadata', res, { once: true });
+      v.addEventListener('error', () => rej(new Error('decode')), { once: true });
+      setTimeout(() => rej(new Error('timeout')), 20000);
+    });
+    if (!isFinite(v.duration)) {
+      v.currentTime = 1e7;
+      await once(v, 'seeked').catch(() => {});
+      v.currentTime = 0;
+      await once(v, 'seeked').catch(() => {});
+    }
+    if (v.readyState < 2) await once(v, 'loadeddata', 6000).catch(async () => { try { await v.play(); v.pause(); } catch (e) { /* ignore */ } });
+    if (!v.videoWidth || !isFinite(v.duration) || v.duration <= 0) throw new Error('decode');
+  } catch (e) {
+    v.remove(); URL.revokeObjectURL(url);
+    throw new Error(`"${file.name}" इस ब्राउज़र में नहीं चल पा रही (codec support नहीं है)। Chrome में खोलें या फ़ोन की camera setting में "Most compatible / H.264" चुनें।`);
+  }
+  const clip = { id: state.nextId++, file, url, video: v, name: file.name, dur: v.duration, w: v.videoWidth, h: v.videoHeight, samples: null, fps: 30, audioBuf: undefined, thumb: null };
+  try {
+    await seekTo(v, Math.min(clip.dur * 0.3, 2));
+    const c = document.createElement('canvas'); c.width = 240; c.height = Math.round(240 * clip.h / clip.w);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    clip.thumb = c.toDataURL('image/jpeg', 0.7);
+  } catch (e) { /* thumbnail optional */ }
+  return clip;
+}
+async function estimateFps(v) {
+  if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) return 30;
+  try {
+    await seekTo(v, Math.min(v.duration * 0.3, 1));
+    const times = [];
+    const p = new Promise((res) => {
+      const cb = (now, md) => { times.push(md.mediaTime); if (times.length < 14) v.requestVideoFrameCallback(cb); else res(); };
+      v.requestVideoFrameCallback(cb);
+      setTimeout(res, 1300);
+    });
+    await v.play();
+    await p;
+    v.pause();
+    const d = [];
+    for (let i = 1; i < times.length; i++) { const x = times[i] - times[i - 1]; if (x > 0.002 && x < 0.2) d.push(x); }
+    if (d.length < 4) return 30;
+    const fps = 1 / percentile(d, 0.25);
+    const common = [24, 25, 30, 48, 50, 60, 90, 120, 240];
+    for (const c of common) if (Math.abs(fps - c) / c < 0.08) return c;
+    return clamp(Math.round(fps), 15, 240);
+  } catch (e) { return 30; } finally { v.pause(); }
+}
+
+/* ============================================================
+   Footage analysis: sharpness, motion, colour, exposure, subject
+   ============================================================ */
+async function analyzeClip(clip, onProg) {
+  const v = clip.video;
+  clip.fps = await estimateFps(v);
+  const aw = 96; const ah = clamp(Math.round(96 * clip.h / clip.w), 40, 192);
+  const cv = document.createElement('canvas'); cv.width = aw; cv.height = ah;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  let fd = null; let fcv = null; let fcx = null;
+  try {
+    if ('FaceDetector' in window) {
+      fd = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 4 });
+      fcv = document.createElement('canvas'); fcv.width = 320; fcv.height = Math.round(320 * clip.h / clip.w);
+      fcx = fcv.getContext('2d');
+    }
+  } catch (e) { fd = null; }
+  const N = clamp(Math.round(clip.dur * 4), 6, 240);
+  const step = clip.dur / N;
+  const motionNorm = 1 / Math.sqrt(step / 0.25);
+  const S = []; let prevY = null;
+  const n = aw * ah; const satA = new Float32Array(n);
+  for (let i = 0; i < N; i++) {
+    if (state.cancel) throw new Error('cancelled');
+    const t = (i + 0.5) * step;
+    await seekTo(v, t);
+    cx.drawImage(v, 0, 0, aw, ah);
+    const d = cx.getImageData(0, 0, aw, ah).data;
+    const Y = new Float32Array(n);
+    let sumY = 0, sRG = 0, sYB = 0, sRG2 = 0, sYB2 = 0, hi = 0, lo = 0;
+    for (let p = 0, q = 0; p < n; p++, q += 4) {
+      const r = d[q] / 255, g = d[q + 1] / 255, b = d[q + 2] / 255;
+      const y = 0.2126 * r + 0.7152 * g + 0.0722 * b; Y[p] = y; sumY += y;
+      const rg = r - g, yb = 0.5 * (r + g) - b; sRG += rg; sYB += yb; sRG2 += rg * rg; sYB2 += yb * yb;
+      satA[p] = Math.max(r, g, b) - Math.min(r, g, b);
+      if (y > 0.97) hi++; if (y < 0.03) lo++;
+    }
+    const mRG = sRG / n, mYB = sYB / n;
+    const colorful = Math.sqrt(Math.max(0, sRG2 / n - mRG * mRG) + Math.max(0, sYB2 / n - mYB * mYB)) + 0.3 * Math.sqrt(mRG * mRG + mYB * mYB);
+    let lap = 0, motion = 0, wx = 0, wy = 0, ws = 0;
+    for (let y = 1; y < ah - 1; y++) {
+      for (let x = 1; x < aw - 1; x++) {
+        const p = y * aw + x;
+        lap += Math.abs(4 * Y[p] - Y[p - 1] - Y[p + 1] - Y[p - aw] - Y[p + aw]);
+        const md = prevY ? Math.abs(Y[p] - prevY[p]) : 0;
+        const gx = Y[p + 1] - Y[p - 1], gy = Y[p + aw] - Y[p - aw];
+        const nx = x / aw - 0.5, ny = y / ah - 0.5;
+        const bias = Math.exp(-(nx * nx + ny * ny) / 0.18);
+        const s = (Math.sqrt(gx * gx + gy * gy) * 0.8 + md * 1.6 + satA[p] * 0.25) * bias;
+        const s2 = s * s; wx += s2 * x; wy += s2 * y; ws += s2;
+      }
+    }
+    if (prevY) { let m = 0; for (let p = 0; p < n; p++) m += Math.abs(Y[p] - prevY[p]); motion = (m / n) * motionNorm; }
+    let fx = ws > 1e-9 ? wx / ws / aw : 0.5;
+    let fy = ws > 1e-9 ? wy / ws / ah : 0.45;
+    let face = 0;
+    if (fd && i % 2 === 0) {
+      try {
+        fcx.drawImage(v, 0, 0, fcv.width, fcv.height);
+        const faces = await fd.detect(fcv);
+        if (faces.length) {
+          let bb = faces[0].boundingBox;
+          for (const fc of faces) if (fc.boundingBox.width * fc.boundingBox.height > bb.width * bb.height) bb = fc.boundingBox;
+          fx = (bb.x + bb.width / 2) / fcv.width; fy = (bb.y + bb.height * 0.45) / fcv.height;
+          face = Math.min(1, (bb.width * bb.height) / (fcv.width * fcv.height) * 8);
+        }
+      } catch (e) { fd = null; }
+    }
+    S.push({ t, bright: sumY / n, colorful, sharp: lap / ((aw - 2) * (ah - 2)), motion, fx, fy, face, hi: hi / n, lo: lo / n });
+    prevY = Y;
+    onProg((i + 1) / N);
+    if (i % 8 === 7) await sleep(0);
+  }
+  if (S.length > 1) S[0].motion = S[1].motion;
+  const sm = S.map((s, i) => {
+    let x = 0, y = 0, w = 0;
+    for (let j = Math.max(0, i - 2); j <= Math.min(S.length - 1, i + 2); j++) { const ww = 1 + S[j].face * 3; x += S[j].fx * ww; y += S[j].fy * ww; w += ww; }
+    return [x / w, y / w];
+  });
+  S.forEach((s, i) => { s.fx = sm[i][0]; s.fy = sm[i][1]; });
+  clip.samples = S;
+}
+function scoreClips(clips, style, cfg) {
+  const all = clips.flatMap((c) => c.samples);
+  const sharpHi = percentile(all.map((s) => s.sharp), 0.9) || 1e-6;
+  const colHi = percentile(all.map((s) => s.colorful), 0.9) || 1e-6;
+  const motHi = percentile(all.map((s) => s.motion), 0.9) || 1e-6;
+  const mp = clamp(style.motionPref + cfg.pace * 0.15, 0, 1);
+  for (const s of all) {
+    s.nSharp = clamp(s.sharp / sharpHi, 0, 1.2);
+    s.nCol = clamp(s.colorful / colHi, 0, 1.2);
+    s.nMot = clamp(s.motion / motHi, 0, 1.3);
+    const expo = 1 - clamp(Math.abs(s.bright - 0.48) / 0.4, 0, 1);
+    const expoPen = clamp((s.hi + s.lo) * 2, 0, 0.6);
+    const shaky = s.nMot > 1 && s.nSharp < 0.45 ? 0.25 : 0;
+    const quality = 0.38 * s.nSharp + 0.22 * s.nCol + 0.22 * expo + 0.18 * s.face - expoPen * 0.5 - shaky;
+    s.score = quality * (1 - mp * 0.45) + Math.min(1, s.nMot) * mp * 0.55;
+  }
+}
+function windowStats(clip, a, b) {
+  const S = clip.samples; let sum = 0, n = 0, maxMot = 0;
+  for (const s of S) { if (s.t < a - 0.13) continue; if (s.t > b + 0.13) break; sum += s.score; maxMot = Math.max(maxMot, s.nMot); n++; }
+  if (!n) { let best = S[0]; for (const s of S) if (Math.abs(s.t - (a + b) / 2) < Math.abs(best.t - (a + b) / 2)) best = s; return { mean: best.score, maxMot: best.nMot }; }
+  return { mean: sum / n, maxMot };
+}
+function windowFocus(clip, a, b) {
+  const S = clip.samples; let x = 0, y = 0, w = 0, face = 0;
+  for (const s of S) { if (s.t < a - 0.15 || s.t > b + 0.15) continue; const ww = 1 + s.face * 3; x += s.fx * ww; y += s.fy * ww; w += ww; face = Math.max(face, s.face); }
+  if (!w) { let best = S[0]; for (const s of S) if (Math.abs(s.t - (a + b) / 2) < Math.abs(best.t - (a + b) / 2)) best = s; return { x: best.fx, y: best.fy, face: best.face }; }
+  return { x: x / w, y: y / w, face };
+}
+
+/* ============================================================
+   Music analysis: onset envelope → tempo → beat grid → drop
+   ============================================================ */
+function makeFFT(N) {
+  const levels = Math.log2(N) | 0;
+  const cos = new Float32Array(N / 2), sin = new Float32Array(N / 2);
+  for (let i = 0; i < N / 2; i++) { cos[i] = Math.cos((2 * Math.PI * i) / N); sin[i] = Math.sin((2 * Math.PI * i) / N); }
+  const rev = new Uint32Array(N);
+  for (let i = 0; i < N; i++) { let x = i, r = 0; for (let j = 0; j < levels; j++) { r = (r << 1) | (x & 1); x >>>= 1; } rev[i] = r; }
+  return (re, im) => {
+    for (let i = 0; i < N; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (let size = 2; size <= N; size <<= 1) {
+      const half = size >>> 1, step = N / size;
+      for (let i = 0; i < N; i += size) {
+        for (let j = i, k = 0; j < i + half; j++, k += step) {
+          const l = j + half;
+          const tre = re[l] * cos[k] + im[l] * sin[k];
+          const tim = -re[l] * sin[k] + im[l] * cos[k];
+          re[l] = re[j] - tre; im[l] = im[j] - tim; re[j] += tre; im[j] += tim;
+        }
+      }
+    }
+  };
+}
+function analyzeMusic(audio) {
+  const sr = audio.sampleRate;
+  const len = Math.min(audio.length, sr * 300);
+  const mono = new Float32Array(len);
+  for (let c = 0; c < audio.numberOfChannels; c++) { const d = audio.getChannelData(c); for (let i = 0; i < len; i++) mono[i] += d[i] / audio.numberOfChannels; }
+  const N = 1024, hop = 512; const fps = sr / hop;
+  const frames = Math.max(0, Math.floor((len - N) / hop));
+  const fft = makeFFT(N);
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N);
+  const re = new Float32Array(N), im = new Float32Array(N);
+  let prev = new Float32Array(N / 2); let cur = new Float32Array(N / 2);
+  const env = new Float32Array(frames), rms = new Float32Array(frames);
+  for (let f = 0; f < frames; f++) {
+    const o = f * hop; let e = 0;
+    for (let i = 0; i < N; i++) { const x = mono[o + i]; re[i] = x * win[i]; im[i] = 0; if (i < hop) e += x * x; }
+    rms[f] = Math.sqrt(e / hop);
+    fft(re, im);
+    let flux = 0;
+    for (let k = 1; k < N / 2; k++) {
+      const mag = Math.log1p(100 * Math.hypot(re[k], im[k]));
+      cur[k] = mag;
+      const dlt = mag - prev[k];
+      if (dlt > 0) flux += dlt * (k < 40 ? 1.6 : 1);
+    }
+    env[f] = flux;
+    const t = prev; prev = cur; cur = t;
+  }
+  // adaptive threshold: subtract local mean, rectify
+  const W = Math.round(fps * 0.4); const on = new Float32Array(frames);
+  let acc = 0; const q = [];
+  for (let f = 0; f < frames; f++) {
+    acc += env[f]; q.push(env[f]); if (q.length > W) acc -= q.shift();
+    on[f] = Math.max(0, env[f] - acc / q.length);
+  }
+  let mx = 0; for (let f = 0; f < frames; f++) mx = Math.max(mx, on[f]);
+  if (mx > 0) for (let f = 0; f < frames; f++) on[f] /= mx;
+  const result = { bpm: 0, beats: [], dropTime: 0, duration: audio.duration, period: 0.5 };
+  if (frames < fps * 4) { result.bpm = 120; result.period = 0.5; for (let t = 0; t < audio.duration; t += 0.5) result.beats.push(t); return result; }
+  // tempo by autocorrelation with a perceptual prior around ~115 BPM
+  const minLag = Math.floor((fps * 60) / 180), maxLag = Math.ceil((fps * 60) / 68);
+  const ac = new Float32Array(maxLag + 2);
+  let bestLag = minLag, bestVal = -1;
+  for (let lag = minLag; lag <= maxLag + 1; lag++) {
+    let s = 0; for (let f = 0; f + lag < frames; f++) s += on[f] * on[f + lag];
+    ac[lag] = s / (frames - lag);
+  }
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    const bpm = (60 * fps) / lag;
+    const w = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 115) / 0.7, 2));
+    const v = ac[lag] * w;
+    if (v > bestVal) { bestVal = v; bestLag = lag; }
+  }
+  let period = bestLag;
+  if (bestLag > minLag && bestLag < maxLag) {
+    const a = ac[bestLag - 1], b = ac[bestLag], c = ac[bestLag + 1];
+    const den = a - 2 * b + c; if (Math.abs(den) > 1e-12) period = bestLag + clamp(0.5 * (a - c) / den, -0.5, 0.5);
+  }
+  // phase
+  let bestPhase = 0, bestPS = -1;
+  for (let ph = 0; ph < period; ph += 1) {
+    let s = 0; for (let x = ph; x < frames; x += period) s += on[Math.round(x)] || 0;
+    if (s > bestPS) { bestPS = s; bestPhase = ph; }
+  }
+  const beats = [];
+  for (let x = bestPhase; x < frames; x += period) beats.push(x / fps);
+  const tail = len < audio.length; // song longer than analysed part: extend grid
+  if (tail) { const p = period / fps; let t = beats[beats.length - 1] + p; while (t < audio.duration) { beats.push(t); t += p; } }
+  // energy per beat → find the "drop" (largest sustained energy rise)
+  const beatRms = beats.map((b, i) => {
+    const f0 = Math.floor(b * fps), f1 = Math.min(frames, Math.floor((beats[i + 1] || b + period / fps) * fps));
+    let s = 0, n = 0; for (let f = f0; f < f1; f++) { s += rms[f]; n++; } return n ? s / n : 0;
+  });
+  const rmsMax = Math.max(1e-6, ...beatRms);
+  let dropIdx = -1, dropVal = 0;
+  for (let i = 8; i < beatRms.length - 8; i++) {
+    let before = 0, after = 0;
+    for (let j = i - 8; j < i; j++) before += beatRms[j];
+    for (let j = i; j < i + 4; j++) after += beatRms[j];
+    before /= 8; after /= 4;
+    const v = (after / (before + 1e-4)) * (after / rmsMax);
+    if (v > dropVal) { dropVal = v; dropIdx = i; }
+  }
+  result.bpm = (60 * fps) / period;
+  result.period = period / fps;
+  result.beats = beats;
+  result.dropTime = dropIdx >= 0 ? beats[dropIdx] : beats[Math.floor(beats.length * 0.3)] || 0;
+  return result;
+}
+async function loadMusic(file) {
+  const buf = await file.arrayBuffer();
+  const ctx = new OfflineAudioContext(2, 48000, 48000);
+  let audio;
+  try { audio = await ctx.decodeAudioData(buf); } catch (e) { throw new Error(`"${file.name}" का ऑडियो नहीं पढ़ पाए। MP3/M4A/WAV फ़ाइल try करें।`); }
+  await sleep(10);
+  const ana = analyzeMusic(audio);
+  return { file, name: file.name, audio, ...ana };
+}
+
+/* ============================================================
+   Director: turns footage + prompt + music into an edit plan
+   ============================================================ */
+const SIZES = { '9:16': { 1080: [1080, 1920], 720: [720, 1280] }, '4:5': { 1080: [1080, 1350], 720: [720, 900] }, '1:1': { 1080: [1080, 1080], 720: [720, 720] }, '16:9': { 1080: [1920, 1080], 720: [1280, 720] } };
+function resolveConfig(intent) {
+  const sv = $('#styleSel').value, dv = $('#durSel').value, bv = $('#barsSel').value, ov = $('#origSel').value;
+  const style = sv !== 'auto' ? sv : intent.style || 'blockbuster';
+  const D = dv !== 'auto' ? +dv : intent.duration || 15;
+  const [W, H] = SIZES[$('#aspectSel').value][$('#qualSel').value];
+  const st = STYLES[style];
+  return {
+    style, D, W, H, fps: +$('#fpsSel').value,
+    bars: bv === 'on' ? true : bv === 'off' ? false : intent.letterbox != null ? intent.letterbox : st.letterbox,
+    orig: ov === 'on' ? true : ov === 'off' ? false : !state.music,
+    sfx: $('#sfxSel').value === 'on' && intent.sfx,
+    chrono: intent.chrono != null ? intent.chrono : st.chrono,
+    slowmo: intent.slowmo, pace: intent.pace, close: intent.close, shake: intent.shake,
+    texts: intent.texts,
+  };
+}
+function coverSize(sw, sh, W, H) { const sa = sw / sh, oa = W / H; return sa > oa ? { sx: oa / sa, sy: 1 } : { sx: 1, sy: sa / oa }; }
+function speedAt(p, u) {
+  if (p.type === 'const') return p.v;
+  const k = p.keys;
+  if (u <= k[0][0]) return k[0][1];
+  for (let i = 0; i < k.length - 1; i++) if (u <= k[i + 1][0]) return lerp(k[i][1], k[i + 1][1], smooth((u - k[i][0]) / (k[i + 1][0] - k[i][0])));
+  return k[k.length - 1][1];
+}
+function buildCum(p, dur) {
+  const N = 240; const cum = new Float32Array(N + 1);
+  for (let i = 1; i <= N; i++) cum[i] = cum[i - 1] + (speedAt(p, (i - 0.5) / N) * dur) / N;
+  return cum;
+}
+function cumAt(cum, u) { const N = cum.length - 1; const x = clamp(u, 0, 1) * N; const i = Math.min(N - 1, Math.floor(x)); return lerp(cum[i], cum[i + 1], x - i); }
+
+function buildPlan() {
+  const intent = parsePrompt($('#prompt').value);
+  const cfg = resolveConfig(intent);
+  const style = STYLES[cfg.style];
+  const clips = state.clips;
+  const rng = mulberry32(state.seed * 9973 + 17);
+  scoreClips(clips, style, cfg);
+  const D = cfg.D; const warnings = [];
+
+  // ---- timing grid (music beats or synthetic tempo)
+  let H = D * 0.42;
+  let beats = [], period, musicStart = 0, bpm;
+  const music = state.music;
+  if (music && music.beats.length > 4) {
+    period = music.period; bpm = music.bpm;
+    if (music.duration >= D + 0.2) musicStart = clamp(music.dropTime - H, 0, music.duration - D - 0.1);
+    else warnings.push('गाना रील से छोटा है, इसलिए वो loop होगा।');
+    const shifted = music.beats.map((b) => b - musicStart);
+    const dropRel = music.dropTime - musicStart;
+    if (dropRel > 2.5 && dropRel < D - 3.5) H = dropRel;
+    beats = shifted.filter((b) => b >= -0.001 && b <= D + 0.001);
+    if (music.duration < D + musicStart) { // looped music → extend grid
+      const p = period; let t = (beats[beats.length - 1] || 0) + p; while (t < D) { beats.push(t); t += p; }
+    }
+  } else {
+    bpm = style.bpm * (cfg.pace > 0 ? 1.12 : cfg.pace < 0 ? 0.88 : 1);
+    period = 60 / bpm;
+    for (let t = 0; t <= D + 1e-6; t += period) beats.push(t);
+  }
+  const snap = (t) => { let best = t, bd = Infinity; for (const b of beats) { const d = Math.abs(b - t); if (d < bd) { bd = d; best = b; } } return bd <= period * 0.6 ? best : t; };
+  const snapAfter = (t) => { for (const b of beats) if (b >= t - 1e-6) return b; return t; };
+  let hookEnd = snapAfter(Math.min(1.25, D * 0.12));
+  if (hookEnd > 2.4 || hookEnd < 0.6) hookEnd = 1.3;
+  if (H < hookEnd + 1.4) H = snapAfter(hookEnd + 1.4);
+  H = snap(H);
+  let heroEnd = snap(H + clamp(D * 0.2, 2.4, 5) * (cfg.slowmo ? 1.25 : 1));
+  if (heroEnd - H < 1.8) heroEnd = H + 2.2;
+  let outroStart = snap(D - clamp(D * 0.15, 1.6, 3.2));
+  if (outroStart > D - 1.2) outroStart = D - 1.4;
+  if (heroEnd > outroStart - 0.6) { heroEnd = Math.max(H + 1.6, outroStart - 0.6); }
+  const minShot = Math.max(0.32, period * 0.5);
+
+  // ---- slot layout
+  const slots = [];
+  const add = (a, b, section) => { if (b - a > 0.05) slots.push({ start: a, end: b, section }); };
+  if (hookEnd >= 1.0 && cfg.pace >= 0 && style.cut <= 2) {
+    const mid = snap(hookEnd / 2);
+    if (mid >= 0.4 && hookEnd - mid >= 0.4) { add(0, mid, 'hook'); add(mid, hookEnd, 'hook'); } else add(0, hookEnd, 'hook');
+  } else add(0, hookEnd, 'hook');
+  const fill = (a, b, k, section) => {
+    let t = a; let guard = 0;
+    while (guard++ < 200) {
+      let kk = k;
+      const r = rng();
+      if (k >= 2 && r < 0.18) kk = k / 2; else if (k <= 2 && r > 0.82) kk = k * 2;
+      let stepT = period * kk;
+      while (stepT > 3.0 && kk > 1) { kk /= 2; stepT = period * kk; }
+      while (stepT < minShot) { kk *= 2; stepT = period * kk; }
+      if (b - t <= stepT * 1.5) break;
+      let nt = snap(t + stepT);
+      if (nt <= t + minShot * 0.9) nt = t + stepT;
+      add(t, nt, section); t = nt;
+    }
+    add(t, b, section);
+  };
+  const pace = cfg.pace > 0 ? 0.5 : cfg.pace < 0 ? 2 : 1;
+  const k = clamp(style.cut * pace, 0.5, 8);
+  fill(hookEnd, H, k, 'build');
+  add(H, heroEnd, 'hero');
+  fill(heroEnd, outroStart, Math.max(0.5, k / 2 >= 1 ? k / 2 : k), 'post');
+  add(outroStart, D, 'outro');
+
+  // ---- speed profiles
+  const calm = style.key === 'dreamy' || cfg.pace < 0;
+  slots.forEach((s, i) => {
+    s.i = i; s.dur = s.end - s.start;
+    const base = style.baseSpeed;
+    if (s.section === 'hero') {
+      if (calm) s.profile = { type: 'const', v: 0.45 };
+      else { const lo = cfg.slowmo ? 0.25 : 0.35; s.profile = { type: 'ramp', keys: [[0, 1.5], [0.2, lo], [0.8, lo], [1, 1.3]] }; }
+    } else if (s.section === 'outro') s.profile = { type: 'const', v: Math.max(0.45, 0.6 * base) };
+    else if (s.section === 'hook') s.profile = { type: 'const', v: cfg.slowmo && style.key !== 'energetic' ? 0.6 : 1 };
+    else {
+      // build: occasional slow-mo accent; climax (post): keep energy up, never slow
+      let v = base;
+      const r = rng();
+      if (style.key === 'energetic' && r < 0.2) v = 1.3;
+      else if (s.section === 'build' && style.key !== 'energetic' && r < 0.12 + cfg.slowmo * 0.2) v = 0.5;
+      else if (s.section === 'post') v = Math.max(1, base);
+      s.profile = { type: 'const', v };
+    }
+    s.cum = buildCum(s.profile, s.dur);
+    s.span = s.cum[s.cum.length - 1];
+  });
+
+  // ---- footage selection
+  const used = [];
+  const totalFootage = clips.reduce((a, c) => a + c.dur, 0);
+  const needed = slots.reduce((a, s) => a + s.span, 0);
+  if (totalFootage < needed * 0.9) warnings.push(`फुटेज कम है (${totalFootage.toFixed(1)}s, ज़रूरत ~${needed.toFixed(1)}s)। कुछ हिस्से अलग framing के साथ दोहराए जाएँगे। ज़्यादा क्लिप्स डालें तो रील बेहतर बनेगी।`);
+  const chronoW = cfg.chrono ? 0.8 : 0.15;
+  const choose = (slot, prevCi) => {
+    let best = null;
+    for (let ci = 0; ci < clips.length; ci++) {
+      const c = clips[ci];
+      const Lc = Math.min(slot.span, Math.max(0.1, c.dur - 0.05));
+      const step = Math.max(0.2, Math.min(0.5, c.dur / 200));
+      for (let a = 0; a <= c.dur - Lc + 1e-6; a += step) {
+        const ws = windowStats(c, a, a + Lc);
+        let v;
+        if (slot.section === 'hero') {
+          const sa = a + cumAt(slot.cum, 0.2) * (Lc / slot.span), sb = a + cumAt(slot.cum, 0.8) * (Lc / slot.span);
+          v = 0.55 * windowStats(c, sa, sb).maxMot + 0.45 * ws.mean;
+        } else if (slot.section === 'hook') v = 0.6 * ws.mean + 0.4 * ws.maxMot;
+        else v = ws.mean;
+        if (Lc < slot.span) v -= (1 - Lc / slot.span) * 0.6;
+        let ov = 0;
+        for (const u of used) if (u.ci === ci) { const o = Math.max(0, Math.min(a + Lc, u.b + 0.3) - Math.max(a, u.a - 0.3)); ov = Math.max(ov, o / Lc); }
+        v -= ov * 1.2;
+        if (clips.length > 1 && prevCi === ci) v -= 0.06;
+        if (slot.expectedPos != null) { const pos = (ci + (a + Lc / 2) / c.dur) / clips.length; v -= chronoW * Math.abs(pos - slot.expectedPos); }
+        v += (rng() - 0.5) * 0.12;
+        if (!best || v > best.v) best = { v, ci, a, L: Lc };
+      }
+    }
+    return best;
+  };
+  const bodyLen = Math.max(0.1, D - hookEnd);
+  slots.forEach((s) => { s.expectedPos = s.section === 'hook' ? null : clamp((s.start + s.dur / 2 - hookEnd) / bodyLen, 0, 1); });
+  const order = [...slots.filter((s) => s.section === 'hero'), ...slots.filter((s) => s.section === 'hook'), ...slots.filter((s) => s.section !== 'hero' && s.section !== 'hook')];
+  for (const s of order) {
+    const prevCi = s.i > 0 && slots[s.i - 1].ci != null ? slots[s.i - 1].ci : -1;
+    const b = choose(s, prevCi);
+    s.ci = b.ci; s.srcStart = b.a; s.spanScale = b.L / s.span;
+    used.push({ ci: b.ci, a: b.a, b: b.a + b.L });
+  }
+
+  // ---- shot design (framing / camera move)
+  let prevType = null; let lowRes = false;
+  for (const s of slots) {
+    const c = clips[s.ci];
+    const cov = coverSize(c.w, c.h, cfg.W, cfg.H);
+    const zMax = Math.max(1, (2.3 * cov.sx * c.w) / cfg.W);
+    if (zMax < 1.35) lowRes = true;
+    let type;
+    const canClose = zMax >= 1.35;
+    if (s.section === 'hook') type = canClose && s.i === 0 ? 'close' : 'pushin';
+    else if (s.section === 'hero') type = canClose && (cfg.close || rng() < 0.4) ? 'close' : 'pushin';
+    else if (s.section === 'outro') type = 'pullout';
+    else {
+      const w = [['wide', 0.22], ['medium', 0.22], ['close', canClose ? 0.18 + cfg.close * 0.35 : 0], ['pushin', 0.16], ['pan', cov.sx < 0.8 ? 0.22 : 0], ['tilt', style.shake >= 0.5 || cfg.shake ? 0.07 : 0], ['pullout', 0.06]].filter(([t]) => t !== prevType);
+      type = pickWeighted(rng, w);
+    }
+    prevType = type;
+    const span = s.span * s.spanScale;
+    const fA = windowFocus(c, s.srcStart, s.srcStart + span / 2);
+    const fB = windowFocus(c, s.srcStart + span / 2, s.srcStart + span);
+    const fAll = windowFocus(c, s.srcStart, s.srcStart + span);
+    const zc = (z) => clamp(z, 1, zMax);
+    const shot = { type, z0: 1, z1: 1.06, f0: [fA.x, fA.y], f1: [fB.x, fB.y], a0: 0, a1: 0 };
+    switch (type) {
+      case 'wide': shot.z0 = 1.0; shot.z1 = zc(1.07); break;
+      case 'medium': shot.z0 = zc(1.32); shot.z1 = zc(1.42); break;
+      case 'close': {
+        shot.z0 = zc(1.9 + rng() * 0.25); shot.z1 = zc(shot.z0 + 0.12);
+        const fy = fAll.y - (fAll.face > 0.1 ? 0.02 : 0.03);
+        shot.f0 = [fAll.x, fy]; shot.f1 = [lerp(fAll.x, fB.x, 0.3), lerp(fy, fB.y, 0.3)];
+        break;
+      }
+      case 'pushin': shot.z0 = s.section === 'hook' ? 1.0 : zc(1.05); shot.z1 = zc(s.section === 'hook' ? 1.5 : s.section === 'hero' ? 1.32 : 1.38); break;
+      case 'pullout': shot.z0 = zc(1.4); shot.z1 = 1.0; break;
+      case 'pan': {
+        const dir = rng() < 0.5 ? -1 : 1; shot.z0 = shot.z1 = zc(1.05);
+        shot.f0 = [0.5 - dir * 0.5, fAll.y]; shot.f1 = [0.5 + dir * 0.5, fAll.y]; break;
+      }
+      case 'tilt': { const sg = rng() < 0.5 ? -1 : 1; shot.z0 = zc(1.22); shot.z1 = zc(1.3); shot.a0 = sg * 0.055; shot.a1 = sg * 0.03; break; }
+      default: break;
+    }
+    s.shot = shot;
+  }
+  if (lowRes) warnings.push('कुछ क्लिप्स की resolution/orientation की वजह से close-ups सीमित रखे गए हैं (ताकि रील blurry न लगे)। 4K या vertical फुटेज से बेहतर close-ups मिलेंगे।');
+
+  // ---- transitions + sound design events
+  const sfx = []; const impulses = [];
+  let prevTr = 'cut';
+  for (const s of slots) {
+    if (s.i === 0) { s.tr = { type: 'cut' }; continue; }
+    let type;
+    if (s.section === 'hero' && slots[s.i - 1].section !== 'hero') type = style.heroIn;
+    else if (s.section === 'outro') type = style.outroIn;
+    else type = pickWeighted(rng, Object.entries(style.trans).filter(([t]) => t === 'cut' || t !== prevTr));
+    prevTr = type;
+    const dir = rng() < 0.5 ? -1 : 1;
+    s.tr = { type, dir };
+    const t = s.start;
+    if (type === 'whip') sfx.push({ type: 'whoosh', t, s: 0.8, dir });
+    if (type === 'zoom') { sfx.push({ type: 'whoosh', t, s: 0.5, dir }); sfx.push({ type: 'hit', t, s: 0.45 }); impulses.push({ t, s: 0.6 }); }
+    if (type === 'flash') { sfx.push({ type: 'hit', t, s: 0.55 }); impulses.push({ t, s: 0.4 }); }
+    if (type === 'rgb') sfx.push({ type: 'glitch', t, s: 0.6 });
+  }
+  const hero = slots.find((s) => s.section === 'hero');
+  if (hero) {
+    sfx.push({ type: 'riser', t0: Math.max(0, hero.start - Math.min(1.8, hero.start - 0.2)), t: hero.start, s: 0.8 });
+    sfx.push({ type: 'boom', t: hero.start, s: 1 });
+    impulses.push({ t: hero.start, s: 1 });
+  }
+  const outro = slots.find((s) => s.section === 'outro');
+  if (outro) sfx.push({ type: 'boom', t: outro.start, s: 0.4 });
+
+  // ---- titles
+  const texts = [];
+  const T = cfg.texts;
+  if (T.length >= 1) texts.push({ text: T[0], t0: 0.35, t1: Math.max(1.8, Math.min(3.4, H - 0.3)), kind: 'title' });
+  if (T.length >= 3) texts.push({ text: T[1], t0: H + 0.3, t1: Math.min(heroEnd - 0.1, H + 2.3), kind: 'mid' });
+  if (T.length === 4) texts.push({ text: T[2], t0: heroEnd + 0.2, t1: Math.min(outroStart - 0.1, heroEnd + 2.0), kind: 'mid' });
+  if (T.length >= 2) texts.push({ text: T[T.length - 1], t0: outroStart + 0.25, t1: D - 0.15, kind: 'end' });
+
+  const oa = cfg.W / cfg.H;
+  const barsFrac = !cfg.bars ? 0 : oa < 0.9 ? 0.09 : oa < 1.2 ? 0.07 : Math.max(0, (1 - oa / 2.39) / 2);
+  const heroRamp = hero && hero.profile.type === 'ramp' ? { s0: hero.start + hero.dur * 0.2, s1: hero.start + hero.dur * 0.8 } : null;
+
+  return {
+    cfg, style, intent, D, W: cfg.W, H: cfg.H, fps: cfg.fps, slots, beats, period, bpm,
+    music: music ? { audio: music.audio, start: musicStart, duration: music.duration, name: music.name } : null,
+    heroStart: H, heroEnd, outroStart, sfx, impulses, texts, barsFrac, heroRamp, warnings,
+  };
+}
+
+/* ============================================================
+   Renderer: WebGL grade + camera + transitions, 2D titles
+   ============================================================ */
+const VS = `attribute vec2 aPos; varying vec2 vUv; void main(){ vUv = aPos*0.5+0.5; gl_Position = vec4(aPos,0.0,1.0); }`;
+const FS = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uTexA; uniform sampler2D uTexB; uniform float uMix;
+uniform vec2 uCenter; uniform vec2 uSize; uniform float uAngle; uniform float uOutAspect;
+uniform vec2 uBlur; uniform float uZoomBlur; uniform int uTaps; uniform float uChroma;
+uniform float uExposure; uniform float uContrast; uniform float uSat; uniform float uFade; uniform float uTemp; uniform float uTint; uniform float uBW;
+uniform vec3 uShadow; uniform vec3 uHigh;
+uniform float uGlow; uniform float uGrain; uniform float uVignette; uniform float uFrame;
+uniform float uFlash; uniform float uBlack; uniform float uBars;
+const vec3 LW = vec3(0.2126, 0.7152, 0.0722);
+vec2 mapUV(vec2 o){
+  vec2 p = o - 0.5;
+  p.x *= uOutAspect;
+  float c = cos(uAngle), s = sin(uAngle);
+  p = vec2(c*p.x - s*p.y, s*p.x + c*p.y);
+  p.x /= uOutAspect;
+  return uCenter + p*uSize;
+}
+vec3 src(vec2 uv){
+  uv = clamp(uv, vec2(0.0005), vec2(0.9995));
+  vec3 a = texture2D(uTexA, uv).rgb;
+  if (uMix > 0.001) a = mix(a, texture2D(uTexB, uv).rgb, uMix);
+  return a;
+}
+vec3 srcC(vec2 o){
+  vec2 uv = mapUV(o);
+  if (uChroma < 0.0005) return src(uv);
+  vec2 d = (o - 0.5) * uChroma;
+  return vec3(src(mapUV(o + d)).r, src(uv).g, src(mapUV(o - d)).b);
+}
+float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+void main(){
+  vec2 o = vec2(vUv.x, 1.0 - vUv.y);
+  vec3 col = vec3(0.0);
+  if (uTaps <= 1) { col = srcC(o); }
+  else {
+    float n = 0.0;
+    for (int i = 0; i < 16; i++) {
+      if (i >= uTaps) break;
+      float f = float(i) / float(uTaps - 1) - 0.5;
+      col += srcC(o + uBlur*f + (o - 0.5)*uZoomBlur*f); n += 1.0;
+    }
+    col /= n;
+  }
+  if (uGlow > 0.001) {
+    vec3 g = vec3(0.0);
+    for (int k = 0; k < 8; k++) {
+      float a = float(k) * 0.785398 + 0.39;
+      float r = (mod(float(k), 2.0) < 0.5) ? 0.012 : 0.026;
+      g += src(mapUV(o + vec2(cos(a) * r / uOutAspect, sin(a) * r)));
+    }
+    g /= 8.0;
+    vec3 bloom = max(g - 0.62, 0.0) / 0.38;
+    col = 1.0 - (1.0 - col) * (1.0 - clamp(bloom * bloom * uGlow * 1.4, 0.0, 1.0));
+  }
+  col *= uExposure;
+  col *= vec3(1.0 + uTemp*0.10 + uTint*0.03, 1.0 - uTint*0.06, 1.0 - uTemp*0.10 + uTint*0.03);
+  float l = clamp(dot(col, LW), 0.0, 1.0);
+  col += uShadow * (1.0 - l) * (1.0 - l) + uHigh * l * l;
+  col = clamp(col, 0.0, 1.0);
+  col = mix(col, col*col*(3.0 - 2.0*col), uContrast);
+  l = dot(col, LW);
+  col = mix(vec3(l), col, uSat);
+  col = mix(col, vec3(l), uBW);
+  col = col * (1.0 - uFade) + uFade * 0.35 * (vec3(1.0) + uShadow * 4.0);
+  vec2 vq = (o - 0.5) * vec2(uOutAspect, 1.0);
+  float vd = length(vq) / length(vec2(uOutAspect, 1.0) * 0.5);
+  col *= 1.0 - uVignette * smoothstep(0.45, 1.05, vd);
+  float gn = hash(vec3(floor(gl_FragCoord.xy), mod(uFrame, 97.0))) - 0.5;
+  col += gn * uGrain * (1.2 - l);
+  col = mix(col, vec3(1.0), uFlash);
+  col *= 1.0 - uBlack;
+  if (o.y < uBars || o.y > 1.0 - uBars) col = vec3(0.0);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+class Renderer {
+  constructor(W, H) {
+    this.W = W; this.H = H;
+    this.canvas = document.createElement('canvas'); this.canvas.width = W; this.canvas.height = H;
+    const opts = { preserveDrawingBuffer: true, premultipliedAlpha: false, alpha: false, antialias: false };
+    const gl = this.canvas.getContext('webgl2', opts) || this.canvas.getContext('webgl', opts);
+    if (!gl) throw new Error('WebGL उपलब्ध नहीं है।');
+    this.gl = gl;
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('Shader: ' + gl.getShaderInfoLog(s)); return s; };
+    const p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, FS));
+    gl.bindAttribLocation(p, 0, 'aPos');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('Program: ' + gl.getProgramInfoLog(p));
+    gl.useProgram(p); this.p = p;
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    this.u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); const name = info.name.replace(/\[0\]$/, ''); this.u[name] = gl.getUniformLocation(p, name); }
+    this.tex = [this.mkTex(), this.mkTex()];
+    this.key = [null, null];
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.viewport(0, 0, W, H);
+  }
+  mkTex() {
+    const gl = this.gl; const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    return t;
+  }
+  upload(slot, video, key) {
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.tex[slot]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+    this.key[slot] = key;
+  }
+  swap() { this.tex.reverse(); this.key.reverse(); }
+  draw(U) {
+    const gl = this.gl, u = this.u;
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.tex[0]); gl.uniform1i(u.uTexA, 0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.tex[1]); gl.uniform1i(u.uTexB, 1);
+    gl.uniform1f(u.uMix, U.mix);
+    gl.uniform2f(u.uCenter, U.center[0], U.center[1]);
+    gl.uniform2f(u.uSize, U.size[0], U.size[1]);
+    gl.uniform1f(u.uAngle, U.angle);
+    gl.uniform1f(u.uOutAspect, this.W / this.H);
+    gl.uniform2f(u.uBlur, U.blur[0], U.blur[1]);
+    gl.uniform1f(u.uZoomBlur, U.zoomBlur);
+    gl.uniform1i(u.uTaps, U.taps);
+    gl.uniform1f(u.uChroma, U.chroma);
+    const g = U.grade;
+    gl.uniform1f(u.uExposure, g.exposure); gl.uniform1f(u.uContrast, g.contrast); gl.uniform1f(u.uSat, g.sat);
+    gl.uniform1f(u.uFade, g.fade); gl.uniform1f(u.uTemp, g.temp); gl.uniform1f(u.uTint, g.tint); gl.uniform1f(u.uBW, g.bw);
+    gl.uniform3fv(u.uShadow, g.shadow); gl.uniform3fv(u.uHigh, g.high);
+    gl.uniform1f(u.uGlow, g.glow); gl.uniform1f(u.uGrain, g.grain); gl.uniform1f(u.uVignette, g.vignette);
+    gl.uniform1f(u.uFrame, U.frame);
+    gl.uniform1f(u.uFlash, U.flash); gl.uniform1f(u.uBlack, U.black); gl.uniform1f(u.uBars, U.bars);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+}
+function noise1(x) { return Math.sin(x * 1.7) * 0.5 + Math.sin(x * 3.1 + 1.3) * 0.3 + Math.sin(x * 7.3 + 2.1) * 0.2; }
+
+// Everything about a single output frame except the pixels.
+function frameState(plan, t, si) {
+  const s = plan.slots[si]; const next = plan.slots[si + 1];
+  const st = plan.style;
+  const u = clamp((t - s.start) / s.dur, 0, 0.99999);
+  const clip = state.clips[s.ci];
+  const srcT = s.srcStart + cumAt(s.cum, u) * s.spanScale;
+  const speed = speedAt(s.profile, u) * s.spanScale;
+  const sh = s.shot;
+  const ce = sh.type === 'wide' || sh.type === 'medium' ? u : easeInOut(u);
+  let z = lerp(sh.z0, sh.z1, ce);
+  let fx = lerp(sh.f0[0], sh.f1[0], ce), fy = lerp(sh.f0[1], sh.f1[1], ce);
+  let angle = lerp(sh.a0, sh.a1, ce);
+  let offX = 0, offY = 0, blurX = 0, blurY = 0, zoomBlur = 0, chroma = 0, flash = 0, black = 0, zoomMul = 1;
+  if (st.drift) { offX += 0.006 * noise1(t * 0.55 + si * 3.1); offY += 0.005 * noise1(t * 0.47 + 11 + si); angle += 0.003 * noise1(t * 0.4 + 5); zoomMul *= 1.02; }
+  // incoming transition
+  const tin = t - s.start;
+  const tr = s.tr || { type: 'cut' };
+  if (tr.type === 'whip' && tin < 0.2) { const k = 1 - tin / 0.2; const e = k * k; offX += -tr.dir * 0.35 * e; blurX += tr.dir * 0.12 * e; zoomMul *= 1 + 0.25 * e; }
+  if (tr.type === 'zoom' && tin < 0.24) { const k = 1 - tin / 0.24; zoomMul *= 1 + 0.5 * k * k; zoomBlur += 0.28 * k; }
+  if (tr.type === 'flash' && tin < 0.34) flash = Math.max(flash, Math.pow(1 - tin / 0.34, 2) * 0.92);
+  if (tr.type === 'dip' && tin < 0.3) black = Math.max(black, 1 - easeOut(tin / 0.3));
+  if (tr.type === 'rgb' && tin < 0.18) { const k = 1 - tin / 0.18; chroma += 0.035 * k; offX += 0.012 * k * noise1(t * 90); }
+  // outgoing transition (belongs to the next slot)
+  if (next && next.tr) {
+    const tout = next.start - t; const nt = next.tr;
+    if (nt.type === 'whip' && tout < 0.2) { const k = 1 - tout / 0.2; const e = k * k; offX += nt.dir * 0.35 * e; blurX += nt.dir * 0.12 * e; zoomMul *= 1 + 0.25 * e; }
+    if (nt.type === 'zoom' && tout < 0.2) { const k = 1 - tout / 0.2; zoomMul *= 1 + 0.6 * k * k; zoomBlur += 0.32 * k; }
+    if (nt.type === 'flash' && tout < 0.07) flash = Math.max(flash, (1 - tout / 0.07) * 0.3);
+    if (nt.type === 'dip' && tout < 0.35) black = Math.max(black, easeInOut(1 - tout / 0.35));
+  }
+  // impact shake
+  const shakeAmt = Math.max(st.shake, plan.cfg.shake ? 0.8 : 0);
+  if (shakeAmt > 0) {
+    for (const im of plan.impulses) {
+      const dt = t - im.t; if (dt < 0 || dt > 0.5) continue;
+      const amp = shakeAmt * im.s * 0.02 * Math.exp(-dt * 7);
+      offX += amp * noise1(dt * 47 + im.t); offY += amp * noise1(dt * 53 + im.t + 7); angle += amp * 0.8 * noise1(dt * 41 + 3);
+      zoomMul *= 1 + amp * 2;
+    }
+  }
+  // fade out at the very end
+  if (t > plan.D - 0.6) black = Math.max(black, easeInOut((t - (plan.D - 0.6)) / 0.6));
+  z *= zoomMul * (1 + Math.abs(angle) * 1.4);
+  const cov = coverSize(clip.w, clip.h, plan.W, plan.H);
+  const size = [cov.sx / z, cov.sy / z];
+  const cx = clamp(fx, size[0] / 2, 1 - size[0] / 2) + offX * size[0];
+  const cy = clamp(fy, size[1] / 2, 1 - size[1] / 2) + offY * size[1];
+  const blurMag = Math.hypot(blurX, blurY);
+  return {
+    clip, srcT, speed, center: [cx, cy], size, angle,
+    blur: [blurX, blurY], zoomBlur, taps: blurMag > 0.002 || zoomBlur > 0.01 ? 12 : 1, chroma, flash, black,
+    bars: plan.barsFrac * (t < 0.6 ? easeOut(t / 0.6) : 1),
+  };
+}
+function drawTitle(ctx, item, t, plan) {
+  if (t < item.t0 || t > item.t1) return;
+  const W = plan.W, H = plan.H;
+  const F = FONTS[plan.style.font];
+  const p = (t - item.t0) / (item.t1 - item.t0);
+  const fin = clamp((t - item.t0) / 0.5, 0, 1), fout = clamp((item.t1 - t) / 0.4, 0, 1);
+  const a = Math.min(easeOut(fin), fout);
+  if (a <= 0.001) return;
+  const text = F.upper ? item.text.toUpperCase() : item.text;
+  const base = Math.min(W, H * 1.1) * F.size * (item.kind === 'title' ? 1 : 0.78);
+  let px = base;
+  const track = lerp(F.track[0], F.track[1], easeOut(p));
+  const measure = (size) => { ctx.font = F.css(size); const chars = [...text]; let w = 0; const ws = chars.map((ch) => { const m = ctx.measureText(ch).width; w += m; return m; }); return { chars, ws, total: w + track * size * (chars.length - 1) }; };
+  let m = measure(px);
+  if (m.total > W * 0.86) { px *= (W * 0.86) / m.total; m = measure(px); }
+  const y = (item.kind === 'mid' ? H * 0.72 : H * 0.5) + (1 - easeOut(fin)) * H * 0.012;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = px * 0.25;
+  try { if ('filter' in ctx) ctx.filter = fin < 1 ? `blur(${((1 - fin) * px * 0.08).toFixed(2)}px)` : 'none'; } catch (e) { /* ignore */ }
+  let x = (W - m.total) / 2;
+  m.chars.forEach((ch, i) => { ctx.fillText(ch, x, y); x += m.ws[i] + track * px; });
+  if (item.kind === 'title' && (plan.style.font === 'wide' || plan.style.font === 'classic')) {
+    ctx.shadowBlur = 0; ctx.globalAlpha = a * 0.8;
+    const lw = m.total * easeOut(clamp(p * 2, 0, 1)) * 0.5;
+    ctx.fillRect(W / 2 - lw / 2, y + px * 0.75, lw, Math.max(1, px * 0.03));
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   Audio: music / original sound / synthesized score + SFX
+   ============================================================ */
+let NOISE = null;
+function noiseBuf(ctx) {
+  if (NOISE && NOISE.sampleRate === ctx.sampleRate) return NOISE;
+  const b = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate); const d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  NOISE = b; return b;
+}
+function impulseResponse(ctx, sec, decay) {
+  const len = Math.floor(ctx.sampleRate * sec); const b = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+  return b;
+}
+function env(g, t0, peak, attack, release) {
+  g.gain.setValueAtTime(0.0001, Math.max(0, t0));
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), Math.max(0.001, t0 + attack));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + release);
+}
+const SFX = {
+  whoosh(ctx, e, out, verb) {
+    const d = 0.55, t0 = Math.max(0, e.t - d * 0.6);
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf(ctx);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(300, t0); bp.frequency.exponentialRampToValueAtTime(3800, e.t); bp.frequency.exponentialRampToValueAtTime(450, t0 + d);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.75 * e.s, Math.max(t0 + 0.01, e.t)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+    const pan = ctx.createStereoPanner(); pan.pan.setValueAtTime(-(e.dir || 1) * 0.7, t0); pan.pan.linearRampToValueAtTime((e.dir || 1) * 0.7, t0 + d);
+    src.connect(bp); bp.connect(g); g.connect(pan); pan.connect(out); pan.connect(verb);
+    src.start(t0, Math.random() * 2); src.stop(t0 + d + 0.05);
+  },
+  boom(ctx, e, out, verb) {
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(110, e.t); o.frequency.exponentialRampToValueAtTime(32, e.t + 1.2);
+    const g = ctx.createGain(); env(g, e.t, 0.95 * e.s, 0.008, 1.6);
+    o.connect(g); g.connect(out); g.connect(verb); o.start(e.t); o.stop(e.t + 1.8);
+    const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+    const g2 = ctx.createGain(); env(g2, e.t, 0.6 * e.s, 0.004, 0.3);
+    n.connect(lp); lp.connect(g2); g2.connect(out); g2.connect(verb); n.start(e.t, Math.random()); n.stop(e.t + 0.4);
+  },
+  hit(ctx, e, out, verb) {
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(170, e.t); o.frequency.exponentialRampToValueAtTime(48, e.t + 0.25);
+    const g = ctx.createGain(); env(g, e.t, 0.8 * e.s, 0.004, 0.35);
+    o.connect(g); g.connect(out); o.start(e.t); o.stop(e.t + 0.45);
+    const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx);
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2200;
+    const g2 = ctx.createGain(); env(g2, e.t, 0.35 * e.s, 0.002, 0.14);
+    n.connect(hp); hp.connect(g2); g2.connect(out); g2.connect(verb); n.start(e.t, Math.random()); n.stop(e.t + 0.2);
+  },
+  riser(ctx, e, out, verb) {
+    const t0 = e.t0, t1 = e.t; if (t1 - t0 < 0.3) return;
+    const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx); n.loop = true;
+    const hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.Q.value = 2;
+    hp.frequency.setValueAtTime(250, t0); hp.frequency.exponentialRampToValueAtTime(6000, t1);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.4 * e.s, t1 - 0.01); g.gain.linearRampToValueAtTime(0.0001, t1 + 0.02);
+    n.connect(hp); hp.connect(g); g.connect(out); g.connect(verb); n.start(t0); n.stop(t1 + 0.05);
+    const o = ctx.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(180, t0); o.frequency.exponentialRampToValueAtTime(900, t1);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
+    const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.0001, t0); g2.gain.exponentialRampToValueAtTime(0.06 * e.s, t1 - 0.01); g2.gain.linearRampToValueAtTime(0.0001, t1 + 0.02);
+    o.connect(lp); lp.connect(g2); g2.connect(out); o.start(t0); o.stop(t1 + 0.05);
+  },
+  glitch(ctx, e, out) {
+    for (let i = 0; i < 3; i++) {
+      const t = e.t + i * 0.045;
+      const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = 900 + i * 400;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.08 * e.s, t + 0.003); g.gain.setValueAtTime(0.08 * e.s, t + 0.022); g.gain.linearRampToValueAtTime(0.0001, t + 0.026);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.03);
+    }
+  },
+};
+function synthScore(ctx, plan, out, verb) {
+  const D = plan.D; const st = plan.style;
+  const root = 55; // A1
+  const chord = st.chord === 'major' ? [1, 1.26, 1.5] : [1, 1.19, 1.5];
+  // sub drone
+  const droneG = ctx.createGain(); droneG.gain.setValueAtTime(0.0001, 0); droneG.gain.exponentialRampToValueAtTime(0.16, 0.6);
+  droneG.gain.setValueAtTime(0.16, D - 1.5); droneG.gain.linearRampToValueAtTime(0.0001, D);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 360; lp.Q.value = 0.7;
+  lp.connect(droneG); droneG.connect(out);
+  for (const det of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = root; o.detune.value = det; o.connect(lp); o.start(0); o.stop(D); }
+  // pad chord (into reverb mostly)
+  const padG = ctx.createGain(); padG.gain.setValueAtTime(0.0001, 0); padG.gain.exponentialRampToValueAtTime(0.035, 1.5);
+  padG.gain.setValueAtTime(0.035, D - 1.5); padG.gain.linearRampToValueAtTime(0.0001, D);
+  const plp = ctx.createBiquadFilter(); plp.type = 'lowpass'; plp.frequency.value = 1400;
+  plp.connect(padG); padG.connect(out); padG.connect(verb);
+  for (const r of chord) for (const oct of [4, 8]) { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = root * oct * r; o.detune.value = (Math.random() - 0.5) * 8; o.connect(plp); o.start(0); o.stop(D); }
+  // drums on the beat grid (silent during the slow-mo part, like trailers)
+  const slow = plan.heroRamp;
+  const every = st.cut >= 4 ? 2 : 1;
+  plan.beats.forEach((b, i) => {
+    if (b < 0.02 || b > plan.outroStart + 0.01) return;
+    if (slow && b > slow.s0 - 0.05 && b < slow.s1) return;
+    if (i % every) return;
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(140, b); o.frequency.exponentialRampToValueAtTime(45, b + 0.14);
+    const g = ctx.createGain(); env(g, b, 0.75, 0.003, 0.32);
+    o.connect(g); g.connect(out); o.start(b); o.stop(b + 0.4);
+    if (st.key === 'energetic' || st.key === 'neon') {
+      const h = b + plan.period / 2; if (h > plan.outroStart) return;
+      const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx);
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000;
+      const g2 = ctx.createGain(); env(g2, h, 0.12, 0.002, 0.05);
+      n.connect(hp); hp.connect(g2); g2.connect(out); n.start(h, Math.random()); n.stop(h + 0.08);
+    }
+  });
+}
+async function decodeClipAudio(clip) {
+  if (clip.audioBuf !== undefined) return clip.audioBuf;
+  clip.audioBuf = null;
+  if (clip.file.size > 300 * 1024 * 1024) return null;
+  try { const ab = await clip.file.arrayBuffer(); clip.audioBuf = await new OfflineAudioContext(2, 48000, 48000).decodeAudioData(ab); } catch (e) { clip.audioBuf = null; }
+  return clip.audioBuf;
+}
+async function renderAudio(plan) {
+  const sr = 48000; const D = plan.D; const len = Math.ceil(D * sr);
+  const ctx = new OfflineAudioContext(2, len, sr);
+  const master = ctx.createGain(); master.gain.value = 0.9;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+  master.connect(comp); comp.connect(ctx.destination);
+  const verb = ctx.createConvolver(); verb.buffer = impulseResponse(ctx, 2.6, 2.4);
+  const verbG = ctx.createGain(); verbG.gain.value = 0.3; verb.connect(verbG); verbG.connect(master);
+  if (plan.music) {
+    const src = ctx.createBufferSource(); src.buffer = plan.music.audio;
+    if (plan.music.duration < D + plan.music.start) src.loop = true;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, 0); g.gain.linearRampToValueAtTime(1, 0.04); g.gain.setValueAtTime(1, Math.max(0.05, D - 1.3)); g.gain.linearRampToValueAtTime(0, D);
+    let node = src;
+    if (plan.heroRamp) {
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.9;
+      const { s0, s1 } = plan.heroRamp;
+      lp.frequency.setValueAtTime(20000, 0); lp.frequency.setValueAtTime(20000, Math.max(0, s0 - 0.05));
+      lp.frequency.exponentialRampToValueAtTime(650, s0 + 0.35); lp.frequency.setValueAtTime(650, Math.max(s0 + 0.36, s1 - 0.3));
+      lp.frequency.exponentialRampToValueAtTime(20000, s1 + 0.05);
+      src.connect(lp); node = lp;
+    }
+    node.connect(g); g.connect(master);
+    src.start(0, plan.music.start);
+  } else {
+    synthScore(ctx, plan, master, verb);
+  }
+  if (plan.cfg.orig) {
+    for (const s of plan.slots) {
+      const clip = state.clips[s.ci];
+      const ab = await decodeClipAudio(clip);
+      if (!ab || s.profile.type !== 'const' || Math.abs(s.profile.v * s.spanScale - 1) > 0.01) continue;
+      const src = ctx.createBufferSource(); src.buffer = ab;
+      const g = ctx.createGain(); const vol = plan.music ? 0.3 : 0.75;
+      g.gain.setValueAtTime(0, s.start); g.gain.linearRampToValueAtTime(vol, s.start + 0.03); g.gain.setValueAtTime(vol, Math.max(s.start + 0.03, s.end - 0.03)); g.gain.linearRampToValueAtTime(0, s.end);
+      src.connect(g); g.connect(master);
+      src.start(s.start, s.srcStart, s.dur);
+    }
+  }
+  if (plan.cfg.sfx) for (const e of plan.sfx) { const fn = SFX[e.type]; if (fn) fn(ctx, e, master, verb); }
+  const buf = await ctx.startRendering();
+  let peak = 0; for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; } }
+  if (peak > 0) { const gain = Math.min(2.5, 0.84 / peak) /* ~-1.5 dBFS: headroom for codec overshoot */; for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= gain; } }
+  return buf;
+}
+
+/* ============================================================
+   Export: WebCodecs (H.264/VP9/AV1 + AAC/Opus) → MP4
+   ============================================================ */
+async function pickVideoCodec(W, H, fps) {
+  const br = Math.round((W * H * fps) / (1080 * 1920 * 30) * 12e6);
+  const hi = fps > 30 ? '2A' : '28';
+  const cands = [[`avc1.6400${hi}`, 'avc'], [`avc1.4D00${hi}`, 'avc'], [`avc1.4200${hi}`, 'avc'], ['vp09.00.40.08', 'vp9'], ['av01.0.08M.08', 'av1']];
+  for (const [codec, mux] of cands) {
+    const config = { codec, width: W, height: H, bitrate: br, framerate: fps, latencyMode: 'quality' };
+    if (mux === 'avc') config.avc = { format: 'avc' };
+    try { const s = await VideoEncoder.isConfigSupported(config); if (s.supported) return { config, mux }; } catch (e) { /* next */ }
+  }
+  return null;
+}
+async function pickAudioCodec() {
+  if (!('AudioEncoder' in window)) return null;
+  for (const [codec, mux] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]) {
+    const config = { codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 192000 };
+    try { const s = await AudioEncoder.isConfigSupported(config); if (s.supported) return { config, mux }; } catch (e) { /* next */ }
+  }
+  return null;
+}
+async function drain(enc, max) {
+  while (enc.encodeQueueSize > max) await new Promise((r) => { let done = false; const h = () => { if (!done) { done = true; r(); } }; try { enc.addEventListener('dequeue', h, { once: true }); } catch (e) { /* old API */ } setTimeout(h, 20); });
+}
+async function renderReel(plan, ui) {
+  if (!('VideoEncoder' in window) || !('VideoFrame' in window)) throw new Error('यह ब्राउज़र वीडियो एक्सपोर्ट (WebCodecs) सपोर्ट नहीं करता। Android/Desktop पर Chrome या Edge, या iPhone पर Safari 17+ इस्तेमाल करें।');
+  let { W, H } = plan; const fps = plan.fps; const D = plan.D;
+  let vc = await pickVideoCodec(W, H, fps);
+  if (!vc && W * H > 1280 * 720) {
+    const s = 720 / Math.min(W, H); W = Math.round(W * s / 2) * 2; H = Math.round(H * s / 2) * 2;
+    plan = { ...plan, W, H }; vc = await pickVideoCodec(W, H, fps);
+    ui.note('इस डिवाइस पर 1080p encoder नहीं मिला, 720p में बना रहे हैं।');
+  }
+  if (!vc) throw new Error('कोई सपोर्टेड वीडियो encoder नहीं मिला।');
+  ui.status('ऑडियो मिक्स बन रहा है…', 0);
+  const audio = await renderAudio(plan);
+  const ac = await pickAudioCodec();
+  if (!ac) ui.note('चेतावनी: इस ब्राउज़र में audio encoder नहीं है, रील बिना आवाज़ के बनेगी। Chrome इस्तेमाल करें।');
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: vc.mux, width: W, height: H, frameRate: fps },
+    audio: ac ? { codec: ac.mux, numberOfChannels: 2, sampleRate: 48000 } : undefined,
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset',
+  });
+  let encErr = null;
+  if (ac) {
+    const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { encErr = e; } });
+    aenc.configure(ac.config);
+    const L = audio.getChannelData(0), R = audio.getChannelData(1); const len = audio.length;
+    for (let i = 0; i < len; i += 4096) {
+      const n = Math.min(4096, len - i); const data = new Float32Array(n * 2);
+      data.set(L.subarray(i, i + n), 0); data.set(R.subarray(i, i + n), n);
+      const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((i / 48000) * 1e6), data });
+      aenc.encode(ad); ad.close();
+    }
+    await aenc.flush(); aenc.close();
+    if (encErr) throw encErr;
+  }
+  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { encErr = e; } });
+  venc.configure(vc.config);
+  const r = new Renderer(W, H);
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const octx = out.getContext('2d');
+  ui.preview(out);
+  await Promise.all(Object.values(FONTS).map((f) => document.fonts ? document.fonts.load(f.css(40)).catch(() => {}) : null));
+  const total = Math.round(D * fps);
+  const g = plan.style.grade;
+  let si = 0; const t0 = performance.now();
+  for (let f = 0; f < total; f++) {
+    if (state.cancel) { try { venc.close(); } catch (e) { /* ignore */ } throw new Error('cancelled'); }
+    if (encErr) throw encErr;
+    const t = f / fps;
+    while (si < plan.slots.length - 1 && t >= plan.slots[si + 1].start) si++;
+    const fsx = frameState(plan, t, si);
+    const c = fsx.clip; const cfps = c.fps || 30; const v = c.video;
+    const maxK = Math.max(0, Math.floor(c.dur * cfps) - 1);
+    let mix = 0;
+    if (fsx.speed < 0.8) { // frame-blended slow motion
+      const ft = clamp(fsx.srcT * cfps - 0.5, 0, maxK);
+      const k = Math.floor(ft); const k2 = Math.min(maxK, k + 1); mix = k2 > k ? ft - k : 0;
+      const kA = `${c.id}:${k}`, kB = `${c.id}:${k2}`;
+      if (r.key[0] !== kA) {
+        if (r.key[1] === kA) r.swap();
+        else { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+      }
+      if (mix > 0.001 && r.key[1] !== kB) { await seekTo(v, (k2 + 0.5) / cfps); r.upload(1, v, kB); }
+    } else {
+      const k = clamp(Math.floor(fsx.srcT * cfps), 0, maxK); const kA = `${c.id}:${k}`;
+      if (r.key[0] !== kA) { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+    }
+    r.draw({ ...fsx, mix, grade: g, frame: f });
+    octx.drawImage(r.canvas, 0, 0);
+    for (const it of plan.texts) drawTitle(octx, it, t, plan);
+    const vf = new VideoFrame(out, { timestamp: Math.round((f * 1e6) / fps), duration: Math.round(1e6 / fps), alpha: 'discard' });
+    venc.encode(vf, { keyFrame: f % (fps * 2) === 0 });
+    vf.close();
+    await drain(venc, 4);
+    if (f % 3 === 0) {
+      const el = (performance.now() - t0) / 1000; const eta = (el / (f + 1)) * (total - f - 1);
+      ui.status(`Rendering ${f + 1}/${total} frames · ~${Math.ceil(eta)}s बाकी`, (f + 1) / total);
+      await sleep(0);
+    }
+  }
+  await venc.flush(); venc.close();
+  if (encErr) throw encErr;
+  muxer.finalize();
+  return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), codec: vc.config.codec, audioCodec: ac ? ac.config.codec : null, W, H };
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const EXAMPLES = [
+  'Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"',
+  'तेज़ और जोशीली gym reel, fast cuts, shake, "NO EXCUSES"',
+  'Romantic dreamy wedding reel, soft slow motion, "Forever" "Riya & Arjun"',
+  'Moody night city reel, neon lights, "lost in the city"',
+  'Vintage film look, story of our trip, 20 sec, "Summer Memories" "The End"',
+  'Black and white noir, dramatic, close up, "SILENCE"',
+];
+function setProgress(el, frac, text) { el.classList.remove('hidden'); el.querySelector('i').style.width = `${Math.round(clamp(frac, 0, 1) * 100)}%`; el.querySelector('.ptext').textContent = text; }
+function showError(msg) { const b = $('#errBox'); if (!msg) { b.classList.add('hidden'); return; } b.textContent = msg; b.classList.remove('hidden'); }
+function setBusy(b) { state.busy = b; for (const id of ['#planBtn', '#rerollBtn', '#renderBtn', '#clipInput', '#musicInput']) $(id).disabled = b; }
+function renderClipList() {
+  const box = $('#clipList'); box.innerHTML = '';
+  state.clips.forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'clip';
+    d.innerHTML = `${c.thumb ? `<img src="${c.thumb}" alt="">` : '<div class="ph"></div>'}<span class="badge">${i + 1}</span><button class="x" title="Remove" aria-label="Remove">×</button><div class="meta"><b>${c.dur.toFixed(1)}s</b> · ${c.w}×${c.h}${c.samples ? ` · ${c.fps}fps ✓` : ''}<br>${escapeHtml(c.name)}</div>`;
+    d.querySelector('.x').onclick = () => { if (state.busy) return; c.video.remove(); URL.revokeObjectURL(c.url); state.clips = state.clips.filter((x) => x !== c); renderClipList(); invalidatePlan(); };
+    box.appendChild(d);
+  });
+}
+function invalidatePlan() { state.plan = null; $('#plan').classList.add('hidden'); }
+function renderIntent() {
+  const it = parsePrompt($('#prompt').value);
+  const box = $('#intent'); box.innerHTML = '';
+  const add = (txt, dim) => { const s = document.createElement('span'); s.className = `pill${dim ? ' dim' : ''}`; s.textContent = txt; box.appendChild(s); };
+  const sv = $('#styleSel').value;
+  const style = sv !== 'auto' ? sv : it.style || 'blockbuster';
+  add(`🎨 ${STYLES[style].label}${sv === 'auto' && !it.style ? ' (default)' : ''}`);
+  const d = $('#durSel').value !== 'auto' ? +$('#durSel').value : it.duration || 15; add(`⏱ ${d}s`);
+  if (it.slowmo) add('🐢 slow-mo ramp');
+  if (it.pace > 0) add('⚡ fast cuts'); if (it.pace < 0) add('🌊 calm pacing');
+  if (it.close) add('🔍 close-ups');
+  if (it.shake) add('💥 impact shake');
+  if (it.letterbox === true) add('🎞 cinema bars'); if (it.letterbox === false) add('⬛ no bars');
+  if (it.chrono) add('📖 story order');
+  for (const t of it.texts) add(`🅣 “${t}”`);
+  if (!it.texts.length) add('Text जोड़ने के लिए उसे "quotes" में लिखें', true);
+}
+let replanTimer = 0;
+function scheduleReplan() {
+  renderIntent();
+  if (!state.clips.length || !state.clips.every((c) => c.samples)) return;
+  clearTimeout(replanTimer);
+  replanTimer = setTimeout(() => { if (!state.busy) { try { state.plan = buildPlan(); showPlan(state.plan); } catch (e) { showError(e.message); } } }, 350);
+}
+const SEC_LABEL = { hook: 'HOOK', build: 'BUILD', hero: 'HERO', post: 'CLIMAX', outro: 'OUTRO' };
+const SHOT_LABEL = { wide: 'Wide', medium: 'Medium', close: 'Close-up', pushin: 'Push-in', pullout: 'Pull-out', pan: 'Pan', tilt: 'Dutch tilt' };
+const TR_LABEL = { cut: 'cut', whip: 'whip pan', zoom: 'zoom punch', flash: 'flash', dip: 'dip to black', rgb: 'RGB glitch' };
+function showPlan(plan) {
+  $('#plan').classList.remove('hidden');
+  const m = plan.music;
+  $('#planHead').innerHTML = `<b>${escapeHtml(plan.style.label)}</b> · ${plan.D}s · ${plan.W}×${plan.H} · ${plan.fps}fps · <b>${plan.slots.length}</b> shots · ${Math.round(plan.bpm)} BPM${m ? ` · गाना ${fmtT(m.start)} से, drop @ ${plan.heroStart.toFixed(1)}s` : ' · auto score'}`;
+  const tl = $('#timeline'); tl.innerHTML = '';
+  for (const s of plan.slots) { const d = document.createElement('div'); d.className = `sec-${s.section}`; d.style.flex = `${s.dur} 1 0`; d.title = `${SEC_LABEL[s.section]} ${s.start.toFixed(2)}–${s.end.toFixed(2)}s`; d.textContent = s.dur > plan.D * 0.08 ? SEC_LABEL[s.section] : ''; tl.appendChild(d); }
+  const wl = $('#warnList'); wl.innerHTML = plan.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('');
+  const ol = $('#shots'); ol.innerHTML = '';
+  for (const s of plan.slots) {
+    const li = document.createElement('li');
+    const sp = s.profile.type === 'ramp' ? `ramp ${s.profile.keys.map((k) => k[1]).join('→')}×` : `${(s.profile.v * s.spanScale).toFixed(2).replace(/\.?0+$/, '')}×`;
+    li.innerHTML = `<span class="s" style="color:var(--${s.section})">${SEC_LABEL[s.section]}</span><span>${s.start.toFixed(1)}–${s.end.toFixed(1)}s · <b>${SHOT_LABEL[s.shot.type]}</b> · ${sp}<span class="d"> · clip ${s.ci + 1} @ ${fmtT(s.srcStart)}${s.i ? ` · ${TR_LABEL[s.tr.type]}` : ''}</span></span>`;
+    ol.appendChild(li);
+  }
+}
+async function analyzeAll() {
+  const todo = state.clips.filter((c) => !c.samples);
+  for (let i = 0; i < todo.length; i++) {
+    const c = todo[i];
+    await analyzeClip(c, (p) => setProgress($('#progress'), (i + p) / todo.length, `फुटेज analyze हो रहा है: clip ${state.clips.indexOf(c) + 1} (${Math.round(p * 100)}%)`));
+  }
+  renderClipList();
+}
+async function onPlan() {
+  showError(null);
+  if (!state.clips.length) { showError('पहले कम से कम एक वीडियो क्लिप डालें।'); return; }
+  setBusy(true); state.cancel = false;
+  try {
+    await analyzeAll();
+    setProgress($('#progress'), 1, 'एडिट प्लान तैयार ✓');
+    state.plan = buildPlan();
+    showPlan(state.plan);
+  } catch (e) { console.error(e); showError(e.message || String(e)); } finally { setBusy(false); }
+}
+let wakeLock = null;
+async function onRender() {
+  if (!state.plan) return;
+  showError(null); setBusy(true); state.cancel = false;
+  const stage = $('#stage'); stage.classList.remove('hidden');
+  $('#resultActions').classList.add('hidden'); $('#renderCtl').classList.remove('hidden');
+  const scr = $('#screen'); scr.innerHTML = '';
+  const rp = $('#renderProgress'); setProgress(rp, 0, 'Starting…');
+  $('#renderNote').textContent = 'रेंडर होते समय ऐप खुला रखें और स्क्रीन ऑन रखें।';
+  stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { wakeLock = null; }
+  const ui = { status: (txt, f) => setProgress(rp, f, txt), preview: (cv) => { scr.innerHTML = ''; scr.appendChild(cv); }, note: (n) => { $('#renderNote').textContent = n; } };
+  try {
+    const t0 = performance.now();
+    const res = await renderReel(state.plan, ui);
+    if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
+    state.resultUrl = URL.createObjectURL(res.blob);
+    const v = document.createElement('video'); v.src = state.resultUrl; v.controls = true; v.playsInline = true; v.loop = true; v.autoplay = true;
+    scr.innerHTML = ''; scr.appendChild(v);
+    const name = `rawreel-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.mp4`;
+    const a = $('#dlLink'); a.href = state.resultUrl; a.download = name;
+    const file = new File([res.blob], name, { type: 'video/mp4' });
+    $('#shareBtn').onclick = async () => { try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'RawReel' }); else a.click(); } catch (e) { /* user cancelled */ } };
+    $('#resultActions').classList.remove('hidden'); $('#renderCtl').classList.add('hidden');
+    const secs = ((performance.now() - t0) / 1000).toFixed(0);
+    setProgress(rp, 1, `Done ✓ ${(res.blob.size / 1048576).toFixed(1)} MB · ${res.W}×${res.H} · ${res.codec.split('.')[0]}${res.audioCodec ? ' + ' + res.audioCodec.split('.')[0] : ''} · ${secs}s में बनी`);
+    $('#renderNote').textContent = res.codec.startsWith('avc1') ? 'Instagram Reels / YouTube Shorts पर सीधे अपलोड करें।' : 'ध्यान दें: इस ब्राउज़र में H.264 encoder नहीं था, इसलिए वीडियो VP9/AV1 में है। Instagram के लिए Chrome (Android) में दोबारा रेंडर करना बेहतर है।';
+  } catch (e) {
+    console.error(e);
+    if (e.message === 'cancelled') { setProgress(rp, 0, 'Cancelled'); } else { showError(e.message || String(e)); setProgress(rp, 0, 'Failed'); }
+    $('#renderCtl').classList.add('hidden');
+  } finally {
+    setBusy(false);
+    try { if (wakeLock) await wakeLock.release(); } catch (e) { /* ignore */ }
+    wakeLock = null;
+  }
+}
+function init() {
+  const sel = $('#styleSel');
+  for (const [k, s] of Object.entries(STYLES)) { const o = document.createElement('option'); o.value = k; o.textContent = s.label; sel.appendChild(o); }
+  const ex = $('#examples');
+  for (const e of EXAMPLES) { const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = e; b.onclick = () => { $('#prompt').value = e; scheduleReplan(); }; ex.appendChild(b); }
+  $('#clipInput').addEventListener('change', async (ev) => {
+    const files = [...ev.target.files]; ev.target.value = '';
+    showError(null); setBusy(true);
+    const errs = [];
+    for (let i = 0; i < files.length; i++) {
+      setProgress($('#progress'), i / files.length, `Loading ${files[i].name}…`);
+      try { state.clips.push(await loadClip(files[i])); renderClipList(); } catch (e) { errs.push(e.message); }
+    }
+    $('#progress').classList.add('hidden');
+    if (errs.length) showError(errs.join('\n'));
+    setBusy(false); invalidatePlan();
+  });
+  $('#musicInput').addEventListener('change', async (ev) => {
+    const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+    showError(null); setBusy(true); $('#musicInfo').textContent = 'गाना analyze हो रहा है (beats, drop)…';
+    try {
+      state.music = await loadMusic(f);
+      const m = state.music;
+      $('#musicInfo').innerHTML = `🎵 <b>${escapeHtml(m.name)}</b> · ${fmtT(m.duration)} · ~${Math.round(m.bpm)} BPM · drop @ ${fmtT(m.dropTime)} <button class="chip" id="rmMusic" type="button">Remove</button>`;
+      $('#rmMusic').onclick = () => { state.music = null; $('#musicInfo').textContent = ''; scheduleReplan(); };
+    } catch (e) { state.music = null; $('#musicInfo').textContent = ''; showError(e.message); }
+    setBusy(false); scheduleReplan();
+  });
+  $('#prompt').addEventListener('input', scheduleReplan);
+  for (const id of ['#styleSel', '#durSel', '#aspectSel', '#qualSel', '#fpsSel', '#barsSel', '#origSel', '#sfxSel']) $(id).addEventListener('change', scheduleReplan);
+  $('#planBtn').onclick = onPlan;
+  $('#rerollBtn').onclick = () => { state.seed++; if (state.plan) { state.plan = buildPlan(); showPlan(state.plan); } };
+  $('#renderBtn').onclick = onRender;
+  $('#cancelBtn').onclick = () => { state.cancel = true; };
+  renderIntent();
+  if (!('VideoEncoder' in window)) showError('चेतावनी: यह ब्राउज़र वीडियो एक्सपोर्ट (WebCodecs) सपोर्ट नहीं करता। Chrome/Edge (Android या Desktop) या Safari 17+ इस्तेमाल करें।');
+}
+init();
+// test hook (used by the automated smoke test only)
+window.__rawreel = { state, parsePrompt, buildPlan, analyzeMusic };
+</script>
+</body>
+</html>
