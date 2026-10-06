@@ -74,6 +74,13 @@ npx http-server . -p 8765
 # फिर खोलें http://localhost:8765
 ```
 
+## Video decoding
+
+- MP4/MOV फ़ाइलें (फ़ोन कैमरा की H.264/HEVC) `demux.js` से पढ़ी जाती हैं और WebCodecs VideoDecoder से decode होती हैं। Clip card पर ⚡ का मतलब यही fast path है।
+- यह Android Chrome के उस bug से बचाता है जिसमें `<video>` के frames "tainted by cross-origin data" हो जाते हैं, और हर frame के लिए seek न करने से render काफ़ी तेज़ होता है।
+- WebM या ऐसे codec जो decoder नहीं खोल पाता, वो `<video>` element से चलते हैं। वहाँ taint आने पर ऐप element दोबारा बनाकर एक बार retry करता है।
+- Render के समय encoder फेल हो तो ऐप अपने आप सुरक्षित settings (H.264 High → Main → Baseline → software → VP9 → AV1, फिर 720p) से दोबारा बनाता है।
+
 ## Known limitations
 
 - **Render speed**: हर output frame के लिए वीडियो को seek किया जाता है। Desktop/फ़ोन पर 15s की रील में आमतौर पर कुछ दसियों सेकंड से कुछ मिनट तक लगते हैं। Render के दौरान ऐप खुला और स्क्रीन ऑन रखें।
@@ -90,6 +97,12 @@ npx http-server . -p 8765
 npx http-server . -p 8765 &
 node tests/smoke.mjs clip1.mp4 clip2.mp4 --music song.mp3 --prompt 'Epic travel reel "GOA"' --out out.mp4
 ffprobe out.mp4
+
+# MP4/MOV reader vs ffprobe (needs ffmpeg-made test files, see the test header)
+node tests/demux.test.mjs <dir>
+# simulated encoder failure / Chrome frame block
+node tests/encoder-fallback.mjs clip.mp4 --url http://localhost:8765/index.html
+node tests/taint.mjs clip.webm --url http://localhost:8765/index.html
 
 # music library flow (serverless handlers + fake Openverse, no network needed)
 node tests/music.mjs song.wav clip.mp4 --url http://localhost:8765/index.html

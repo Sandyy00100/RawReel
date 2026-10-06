@@ -207,6 +207,7 @@ footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text
 </div>
 
 <script src="vendor/mp4-muxer.js"></script>
+<script src="demux.js"></script>
 <script>
 'use strict';
 /* ============================================================
@@ -377,12 +378,12 @@ function seekTo(v, t) {
     v.currentTime = target;
   });
 }
-async function loadClip(file) {
-  const url = URL.createObjectURL(file);
+// <video> element path (fallback for WebM and for codecs the decoder can't open)
+async function createVideoEl(clip) {
   const v = document.createElement('video');
   v.muted = true; v.playsInline = true; v.preload = 'auto';
   v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
-  v.src = url;
+  v.src = clip.url;
   $('#vidpool').appendChild(v);
   try {
     await new Promise((res, rej) => {
@@ -399,14 +400,64 @@ async function loadClip(file) {
     if (v.readyState < 2) await once(v, 'loadeddata', 6000).catch(async () => { try { await v.play(); v.pause(); } catch (e) { /* ignore */ } });
     if (!v.videoWidth || !isFinite(v.duration) || v.duration <= 0) throw new Error('decode');
   } catch (e) {
-    v.remove(); URL.revokeObjectURL(url);
-    throw new Error(`"${file.name}" इस ब्राउज़र में नहीं चल पा रही (codec support नहीं है)। Chrome में खोलें या फ़ोन की camera setting में "Most compatible / H.264" चुनें।`);
+    v.remove();
+    throw new Error(`"${clip.name}" इस ब्राउज़र में नहीं चल पा रही (codec support नहीं है)। Chrome में खोलें या फ़ोन की camera setting में "Most compatible / H.264" चुनें।`);
   }
-  const clip = { id: state.nextId++, file, url, video: v, name: file.name, dur: v.duration, w: v.videoWidth, h: v.videoHeight, samples: null, fps: 30, audioBuf: undefined, thumb: null };
+  if (clip.video) clip.video.remove();
+  clip.video = v;
+  if (!clip.dur) { clip.dur = v.duration; clip.w = v.videoWidth; clip.h = v.videoHeight; }
+  return v;
+}
+const TAINT_MSG = 'Chrome इस वीडियो के frames पढ़ने नहीं दे रहा (security block)। फ़ोन के Camera/Gallery से वीडियो को दोबारा save या "Export" करके डालें, या Google Photos के बजाय Files app से चुनें।';
+// Returns something drawable for time t: a decoded VideoFrame or the seeked <video>.
+async function getFrame(clip, t) {
+  if (clip.dec) {
+    try { return await clip.dec.frameAt(t); } catch (e) {
+      console.warn('decoder failed, falling back to <video>', e);
+      try { clip.dec.close(); } catch (e2) { /* ignore */ }
+      clip.dec = null;
+    }
+  }
+  if (!clip.video) await createVideoEl(clip);
+  await seekTo(clip.video, t);
+  return clip.video;
+}
+// Rotation to apply to a source: decoded frames are stored unrotated, <video> is already rotated.
+const srcRot = (clip, src) => (src === clip.video ? 0 : clip.rot || 0);
+// Runs use(src, rot) on the frame at time t; if Chrome taints the <video>, rebuild it once and retry.
+async function withFrame(clip, t, use) {
+  const src = await getFrame(clip, t);
+  try { return await use(src, srcRot(clip, src)); } catch (e) {
+    if (e.name !== 'SecurityError' || src !== clip.video) throw e;
+    console.warn('tainted <video>, recreating', e);
+    await createVideoEl(clip); await seekTo(clip.video, t);
+    try { return await use(clip.video, 0); } catch (e2) {
+      if (e2.name === 'SecurityError') { const err = new Error(TAINT_MSG); err.noRetry = true; throw err; }
+      throw e2;
+    }
+  }
+}
+function drawRotated(ctx, src, rot, W, H) {
+  if (!rot) { ctx.drawImage(src, 0, 0, W, H); return; }
+  ctx.save();
+  if (rot === 90) { ctx.translate(W, 0); ctx.rotate(Math.PI / 2); ctx.drawImage(src, 0, 0, H, W); }
+  else if (rot === 180) { ctx.translate(W, H); ctx.rotate(Math.PI); ctx.drawImage(src, 0, 0, W, H); }
+  else { ctx.translate(0, H); ctx.rotate(-Math.PI / 2); ctx.drawImage(src, 0, 0, H, W); }
+  ctx.restore();
+}
+async function loadClip(file) {
+  const url = URL.createObjectURL(file);
+  const clip = { id: state.nextId++, file, url, video: null, dec: null, rot: 0, name: file.name, dur: 0, w: 0, h: 0, samples: null, fps: 30, audioBuf: undefined, thumb: null };
   try {
-    await seekTo(v, Math.min(clip.dur * 0.3, 2));
+    const dec = window.RawDemux ? await RawDemux.DecodedSource.open(file) : null;
+    if (dec) { clip.dec = dec; clip.rot = dec.rotation; clip.dur = dec.duration; clip.w = dec.width; clip.h = dec.height; clip.fps = dec.fps; }
+  } catch (e) { console.warn('fast decoder unavailable for', file.name, e); clip.dec = null; }
+  if (!clip.dec) {
+    try { await createVideoEl(clip); } catch (e) { URL.revokeObjectURL(url); throw e; }
+  }
+  try {
     const c = document.createElement('canvas'); c.width = 240; c.height = Math.round(240 * clip.h / clip.w);
-    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    await withFrame(clip, Math.min(clip.dur * 0.3, 2), (src, rot) => drawRotated(c.getContext('2d'), src, rot, c.width, c.height));
     clip.thumb = c.toDataURL('image/jpeg', 0.7);
   } catch (e) { /* thumbnail optional */ }
   return clip;
@@ -438,8 +489,7 @@ async function estimateFps(v) {
    Footage analysis: sharpness, motion, colour, exposure, subject
    ============================================================ */
 async function analyzeClip(clip, onProg) {
-  const v = clip.video;
-  clip.fps = await estimateFps(v);
+  if (!clip.dec) { if (!clip.video) await createVideoEl(clip); clip.fps = await estimateFps(clip.video); }
   const aw = 96; const ah = clamp(Math.round(96 * clip.h / clip.w), 40, 192);
   const cv = document.createElement('canvas'); cv.width = aw; cv.height = ah;
   const cx = cv.getContext('2d', { willReadFrequently: true });
@@ -459,9 +509,8 @@ async function analyzeClip(clip, onProg) {
   for (let i = 0; i < N; i++) {
     if (state.cancel) throw new Error('cancelled');
     const t = (i + 0.5) * step;
-    await seekTo(v, t);
-    cx.drawImage(v, 0, 0, aw, ah);
-    const d = cx.getImageData(0, 0, aw, ah).data;
+    let fsrc = null, frot = 0;
+    const d = await withFrame(clip, t, (src, rot) => { drawRotated(cx, src, rot, aw, ah); fsrc = src; frot = rot; return cx.getImageData(0, 0, aw, ah).data; });
     const Y = new Float32Array(n);
     let sumY = 0, sRG = 0, sYB = 0, sRG2 = 0, sYB2 = 0, hi = 0, lo = 0;
     for (let p = 0, q = 0; p < n; p++, q += 4) {
@@ -492,7 +541,7 @@ async function analyzeClip(clip, onProg) {
     let face = 0;
     if (fd && i % 2 === 0) {
       try {
-        fcx.drawImage(v, 0, 0, fcv.width, fcv.height);
+        drawRotated(fcx, fsrc, frot, fcv.width, fcv.height);
         const faces = await fd.detect(fcv);
         if (faces.length) {
           let bb = faces[0].boundingBox;
@@ -962,7 +1011,7 @@ uniform vec2 uBlur; uniform float uZoomBlur; uniform int uTaps; uniform float uC
 uniform float uExposure; uniform float uContrast; uniform float uSat; uniform float uFade; uniform float uTemp; uniform float uTint; uniform float uBW;
 uniform vec3 uShadow; uniform vec3 uHigh;
 uniform float uGlow; uniform float uGrain; uniform float uVignette; uniform float uFrame;
-uniform float uFlash; uniform float uBlack; uniform float uBars;
+uniform float uFlash; uniform float uBlack; uniform float uBars; uniform float uRot;
 const vec3 LW = vec3(0.2126, 0.7152, 0.0722);
 vec2 mapUV(vec2 o){
   vec2 p = o - 0.5;
@@ -972,8 +1021,14 @@ vec2 mapUV(vec2 o){
   p.x /= uOutAspect;
   return uCenter + p*uSize;
 }
+vec2 toStored(vec2 uv){
+  if (uRot < 0.5) return uv;
+  if (uRot < 1.5) return vec2(uv.y, 1.0 - uv.x);
+  if (uRot < 2.5) return vec2(1.0 - uv.x, 1.0 - uv.y);
+  return vec2(1.0 - uv.y, uv.x);
+}
 vec3 src(vec2 uv){
-  uv = clamp(uv, vec2(0.0005), vec2(0.9995));
+  uv = toStored(clamp(uv, vec2(0.0005), vec2(0.9995)));
   vec3 a = texture2D(uTexA, uv).rgb;
   if (uMix > 0.001) a = mix(a, texture2D(uTexB, uv).rgb, uMix);
   return a;
@@ -1051,7 +1106,7 @@ class Renderer {
     const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
     for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); const name = info.name.replace(/\[0\]$/, ''); this.u[name] = gl.getUniformLocation(p, name); }
     this.tex = [this.mkTex(), this.mkTex()];
-    this.key = [null, null];
+    this.key = [null, null]; this.rot = [0, 0];
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.viewport(0, 0, W, H);
@@ -1066,18 +1121,19 @@ class Renderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
     return t;
   }
-  upload(slot, video, key) {
+  upload(slot, source, key, rot) {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.tex[slot]);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-    this.key[slot] = key;
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    this.key[slot] = key; this.rot[slot] = rot || 0;
   }
-  swap() { this.tex.reverse(); this.key.reverse(); }
+  swap() { this.tex.reverse(); this.key.reverse(); this.rot.reverse(); }
   draw(U) {
     const gl = this.gl, u = this.u;
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.tex[0]); gl.uniform1i(u.uTexA, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.tex[1]); gl.uniform1i(u.uTexB, 1);
     gl.uniform1f(u.uMix, U.mix);
+    gl.uniform1f(u.uRot, (this.rot[0] || 0) / 90);
     gl.uniform2f(u.uCenter, U.center[0], U.center[1]);
     gl.uniform2f(u.uSize, U.size[0], U.size[1]);
     gl.uniform1f(u.uAngle, U.angle);
@@ -1415,11 +1471,13 @@ async function renderReel(plan, ui) {
       if (state.cancel || e.message === 'cancelled') throw e;
       console.error('render attempt failed', tried[tried.length - 1], e);
       lastErr = e;
+      if (e.noRetry) break;
       if (e.stage === 'audio' && ai < audioOpts.length - 1) { ai++; i--; ui.note('Audio encoder में दिक्कत आई, दूसरी audio setting से दोबारा बना रहे हैं…'); continue; }
       if (i + 1 < Math.min(attempts.length, 6)) ui.note(`Encoder (${vc.label} ${vc.W}×${vc.H}) फेल हुआ, ${attempts[i + 1].label} ${attempts[i + 1].W}×${attempts[i + 1].H} से दोबारा बना रहे हैं…`);
     }
   }
   const e = lastErr || new Error('unknown');
+  if (e.noRetry && !e.stage) throw e;
   const err = new Error(`Render फेल हुआ: ${e.name || 'Error'}: ${e.message}\nStage: ${e.stage || '?'}${e.frame != null ? `, frame ${e.frame}` : ''}\nTried: ${tried.join(' → ')}`);
   err.details = true;
   throw err;
@@ -1478,7 +1536,10 @@ async function encodeAttempt(plan, vc, ac, audio, ui) {
       const t = f / fps;
       while (si < plan.slots.length - 1 && t >= plan.slots[si + 1].start) si++;
       const fsx = frameState(plan, t, si);
-      const c = fsx.clip; const cfps = c.fps || 30; const v = c.video;
+      const c = fsx.clip; const cfps = c.fps || 30;
+      const load = async (slot, k, key) => {
+        try { await withFrame(c, (k + 0.5) / cfps, (src, rot) => r.upload(slot, src, key, rot)); } catch (e) { const err = tagError(e, 'frames', f); err.noRetry = true; throw err; }
+      };
       const maxK = Math.max(0, Math.floor(c.dur * cfps) - 1);
       let mix = 0;
       if (fsx.speed < 0.8) { // frame-blended slow motion
@@ -1487,12 +1548,12 @@ async function encodeAttempt(plan, vc, ac, audio, ui) {
         const kA = `${c.id}:${k}`, kB = `${c.id}:${k2}`;
         if (r.key[0] !== kA) {
           if (r.key[1] === kA) r.swap();
-          else { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+          else await load(0, k, kA);
         }
-        if (mix > 0.001 && r.key[1] !== kB) { await seekTo(v, (k2 + 0.5) / cfps); r.upload(1, v, kB); }
+        if (mix > 0.001 && r.key[1] !== kB) await load(1, k2, kB);
       } else {
         const k = clamp(Math.floor(fsx.srcT * cfps), 0, maxK); const kA = `${c.id}:${k}`;
-        if (r.key[0] !== kA) { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+        if (r.key[0] !== kA) await load(0, k, kA);
       }
       r.draw({ ...fsx, mix, grade: g, frame: f });
       octx.drawImage(r.canvas, 0, 0);
@@ -1529,8 +1590,8 @@ function renderClipList() {
   const box = $('#clipList'); box.innerHTML = '';
   state.clips.forEach((c, i) => {
     const d = document.createElement('div'); d.className = 'clip';
-    d.innerHTML = `${c.thumb ? `<img src="${c.thumb}" alt="">` : '<div class="ph"></div>'}<span class="badge">${i + 1}</span><button class="x" title="Remove" aria-label="Remove">×</button><div class="meta"><b>${c.dur.toFixed(1)}s</b> · ${c.w}×${c.h}${c.samples ? ` · ${c.fps}fps ✓` : ''}<br>${escapeHtml(c.name)}</div>`;
-    d.querySelector('.x').onclick = () => { if (state.busy) return; c.video.remove(); URL.revokeObjectURL(c.url); state.clips = state.clips.filter((x) => x !== c); renderClipList(); invalidatePlan(); };
+    d.innerHTML = `${c.thumb ? `<img src="${c.thumb}" alt="">` : '<div class="ph"></div>'}<span class="badge">${i + 1}</span><button class="x" title="Remove" aria-label="Remove">×</button><div class="meta"><b>${c.dur.toFixed(1)}s</b> · ${c.w}×${c.h}${c.samples ? ` · ${c.fps}fps ✓` : ''}${c.dec ? ' · ⚡' : ''}<br>${escapeHtml(c.name)}</div>`;
+    d.querySelector('.x').onclick = () => { if (state.busy) return; if (c.video) c.video.remove(); if (c.dec) c.dec.close(); URL.revokeObjectURL(c.url); state.clips = state.clips.filter((x) => x !== c); renderClipList(); invalidatePlan(); };
     box.appendChild(d);
   });
 }
