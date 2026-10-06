@@ -49,6 +49,23 @@ Settings panel में style, duration, format (9:16, 4:5, 1:1, 16:9), quality
 5. **Audio**: music या generated score, original clip sound, और synthesized SFX (whoosh, boom, hit, riser) का mix, normalized।
 6. **Export**: WebCodecs से H.264 + AAC MP4। जहाँ H.264 नहीं है वहाँ VP9/AV1 + Opus।
 
+## AI prompt reading (Claude)
+
+लंबा या detailed प्रॉम्प्ट (जैसे "MASTER VIDEO EDIT PROMPT") keywords से पूरा नहीं समझा जा सकता। इसलिए **Analyze & Plan** दबाने पर ऐप प्रॉम्प्ट को Claude (`claude-opus-5-5`) से पढ़वाता है और एक structured "edit direction" लेता है: style, लंबाई, pace, slow-mo (none/subtle/strong), close-ups, कौन से transitions चाहिए/नहीं चाहिए, warmth/saturation/contrast/grain, titles (opening/middle/ending), original sound, SFX। जो चीज़ें ऐप नहीं कर सकता वो ✖ के साथ दिखती हैं।
+
+- सिर्फ़ प्रॉम्प्ट text और clips की लंबाई/orientation भेजी जाती है। **वीडियो कभी upload नहीं होती।**
+- हर प्रॉम्प्ट पर एक ही call होती है; "दूसरा वर्ज़न" या settings बदलने पर दोबारा call नहीं होती।
+- Key न हो या AI fail हो तो ऐप keywords से चलता रहता है और वजह दिखाता है। Settings में "AI prompt reading: Off" से बंद कर सकते हैं।
+
+**Setup (Vercel → Project → Settings → Environment Variables):**
+
+| Name | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | console.anthropic.com से बनाई API key |
+| `RAWREEL_ACCESS_CODE` | कोई भी secret शब्द (ज़रूरी सलाह: इसके बिना जिसे भी आपकी site का link मिले वो आपकी API credit खर्च कर सकता है) |
+
+Env vars जोड़ने के बाद **Redeploy** करें। ऐप पहली बार access code पूछेगा और फ़ोन में याद रखेगा।
+
 ## Music library
 
 - गाने [Openverse](https://openverse.org) से आते हैं: Creative Commons music (ज़्यादातर Jamendo) जिसे commercially इस्तेमाल और edit करना allowed है (CC0, CC BY, CC BY-SA, public domain)।
@@ -103,6 +120,9 @@ node tests/demux.test.mjs <dir>
 # simulated encoder failure / Chrome frame block
 node tests/encoder-fallback.mjs clip.mp4 --url http://localhost:8765/index.html
 node tests/taint.mjs clip.webm --url http://localhost:8765/index.html
+
+# AI director: api/direct.js against a fake Claude API + the app following the direction
+node tests/direct.mjs clip.mp4 --url http://localhost:8765/index.html
 
 # music library flow (serverless handlers + fake Openverse, no network needed)
 node tests/music.mjs song.wav clip.mp4 --url http://localhost:8765/index.html

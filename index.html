@@ -148,6 +148,7 @@ footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text
         <label>Cinema bars<select id="barsSel"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
         <label>Original clip sound<select id="origSel"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></label>
         <label>Sound effects<select id="sfxSel"><option value="on">On (whoosh, boom)</option><option value="off">Off</option></select></label>
+        <label>AI prompt reading<select id="aiSel"><option value="on">On (Claude)</option><option value="off">Off (keywords only)</option></select></label>
       </div>
     </details>
   </section>
@@ -350,6 +351,73 @@ function parsePrompt(raw) {
     tags: [...new Set(tags)],
     flags: Object.keys(f).filter((k) => f[k]),
   };
+}
+
+/* ============================================================
+   AI director: Claude reads the prompt (server function /api/direct)
+   ============================================================ */
+function intentFromDirection(d, kw) {
+  const pick = (map, v, dflt) => (v in map ? map[v] : dflt);
+  const titles = Array.isArray(d.titles) ? d.titles.filter((t) => t && t.text).slice(0, 4).map((t) => ({ text: String(t.text).slice(0, 48), when: t.when })) : [];
+  return {
+    ...kw,
+    ai: true,
+    style: STYLES[d.style] ? d.style : kw.style,
+    duration: Number.isFinite(d.duration_seconds) ? clamp(Math.round(d.duration_seconds), 6, 60) : kw.duration,
+    slowmo: pick({ none: -1, subtle: 0.5, strong: 1 }, d.slow_motion, kw.slowmo),
+    pace: pick({ slow: -1, normal: 0, fast: 1 }, d.pace, kw.pace),
+    close: pick({ few: -0.4, normal: 0, many: 1 }, d.close_ups, kw.close),
+    shake: !!d.camera_shake,
+    letterbox: pick({ on: true, off: false, auto: null }, d.cinema_bars, kw.letterbox),
+    chrono: typeof d.story_order === 'boolean' ? d.story_order : kw.chrono,
+    sfx: typeof d.sound_effects === 'boolean' ? d.sound_effects : kw.sfx,
+    orig: pick({ on: true, off: false, auto: null }, d.original_sound, null),
+    texts: titles.map((t) => t.text),
+    titleSpec: titles,
+    prefer: (d.prefer_transitions || []).filter((t) => TRANSITION_TYPES.includes(t)),
+    avoid: (d.avoid_transitions || []).filter((t) => TRANSITION_TYPES.includes(t)),
+    look: { warmth: d.warmth, saturation: d.saturation, contrast: d.contrast, grain: d.film_grain },
+    summary: String(d.summary || ''),
+    notPossible: (d.not_possible || []).map(String).slice(0, 6),
+  };
+}
+const TRANSITION_TYPES = ['cut', 'whip', 'zoom', 'flash', 'dip', 'rgb'];
+function currentIntent() {
+  const text = $('#prompt').value;
+  const kw = parsePrompt(text);
+  const ai = state.ai;
+  if ($('#aiSel').value === 'on' && ai && ai.direction && ai.prompt === text.trim()) return intentFromDirection(ai.direction, kw);
+  return kw;
+}
+function readCode() { try { return localStorage.getItem('rawreel-code') || ''; } catch (e) { return ''; } }
+function saveCode(c) { try { localStorage.setItem('rawreel-code', c); } catch (e) { /* ignore */ } }
+async function askDirector(onStatus) {
+  const prompt = $('#prompt').value.trim();
+  if ($('#aiSel').value !== 'on' || !prompt) return;
+  if (state.ai && state.ai.prompt === prompt && state.ai.direction) return; // already read this exact prompt
+  onStatus('🧠 Claude आपका प्रॉम्प्ट समझ रहा है…');
+  const dv = $('#durSel').value;
+  const context = {
+    clips: state.clips.map((c) => ({ duration: c.dur, width: c.w, height: c.h })),
+    hasMusic: !!state.music,
+    durationLocked: dv !== 'auto' ? +dv : null,
+  };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let r;
+    try {
+      r = await fetch('/api/direct', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-rawreel-code': readCode() }, body: JSON.stringify({ prompt, context }) });
+    } catch (e) { state.ai = { prompt, err: 'AI तक नहीं पहुँच पाए (इंटरनेट?)' }; return; }
+    if (r.status === 401 && attempt === 0) {
+      const c = window.prompt('AI access code डालें (Vercel में RAWREEL_ACCESS_CODE):', '');
+      if (c == null) { state.ai = { prompt, err: 'AI access code नहीं डाला' }; return; }
+      saveCode(c.trim()); continue;
+    }
+    let d = {}; try { d = await r.json(); } catch (e) { /* ignore */ }
+    if (r.ok && d.direction) { state.ai = { prompt, direction: d.direction }; return; }
+    const why = { no_key: 'Vercel में ANTHROPIC_API_KEY सेट नहीं है', bad_key: 'API key गलत है', code: 'Access code गलत है', rate_limited: 'AI अभी busy है', timeout: 'AI ने समय पर जवाब नहीं दिया', refused: 'AI ने यह प्रॉम्प्ट नहीं लिया' }[d.error] || `AI error (${d.error || r.status})`;
+    state.ai = { prompt, err: why };
+    return;
+  }
 }
 
 /* ============================================================
@@ -748,12 +816,33 @@ function resolveConfig(intent) {
   return {
     style, D, W, H, fps: +$('#fpsSel').value,
     bars: bv === 'on' ? true : bv === 'off' ? false : intent.letterbox != null ? intent.letterbox : st.letterbox,
-    orig: ov === 'on' ? true : ov === 'off' ? false : !state.music,
+    orig: ov === 'on' ? true : ov === 'off' ? false : intent.orig != null ? intent.orig : !state.music,
     sfx: $('#sfxSel').value === 'on' && intent.sfx,
     chrono: intent.chrono != null ? intent.chrono : st.chrono,
     slowmo: intent.slowmo, pace: intent.pace, close: intent.close, shake: intent.shake,
-    texts: intent.texts,
+    texts: intent.texts, titleSpec: intent.titleSpec || null,
+    prefer: intent.prefer || [], avoid: intent.avoid || [], look: intent.look || null, ai: !!intent.ai,
   };
+}
+// A per-plan copy of the look with the AI's colour and transition preferences applied.
+function tunedStyle(base, cfg) {
+  const st = { ...base, grade: { ...base.grade }, trans: { ...base.trans } };
+  const L = cfg.look;
+  if (L) {
+    const g = st.grade;
+    if (L.warmth === 'warmer') g.temp += 0.18; else if (L.warmth === 'cooler') g.temp -= 0.18;
+    if (L.saturation === 'vivid') g.sat *= 1.15; else if (L.saturation === 'muted') g.sat *= 0.78;
+    if (L.contrast === 'punchy') g.contrast = Math.min(0.8, g.contrast + 0.15); else if (L.contrast === 'soft') g.contrast *= 0.55;
+    if (L.grain === 'none') g.grain = 0; else if (L.grain === 'light') g.grain = Math.max(g.grain, 0.03); else if (L.grain === 'heavy') g.grain = Math.max(g.grain, 0.09);
+  }
+  for (const t of cfg.prefer) if (t in st.trans) st.trans[t] = Math.max(2, st.trans[t]) * 2.5;
+  for (const t of cfg.avoid) if (t in st.trans && t !== 'cut') st.trans[t] = 0;
+  st.trans.cut = Math.max(1, st.trans.cut);
+  const ok = (t) => !cfg.avoid.includes(t);
+  const fallbackIn = cfg.prefer.find(ok) || 'cut';
+  if (!ok(st.heroIn)) st.heroIn = fallbackIn;
+  if (!ok(st.outroIn)) st.outroIn = ok('dip') ? 'dip' : fallbackIn;
+  return st;
 }
 function coverSize(sw, sh, W, H) { const sa = sw / sh, oa = W / H; return sa > oa ? { sx: oa / sa, sy: 1 } : { sx: 1, sy: sa / oa }; }
 function speedAt(p, u) {
@@ -771,9 +860,9 @@ function buildCum(p, dur) {
 function cumAt(cum, u) { const N = cum.length - 1; const x = clamp(u, 0, 1) * N; const i = Math.min(N - 1, Math.floor(x)); return lerp(cum[i], cum[i + 1], x - i); }
 
 function buildPlan() {
-  const intent = parsePrompt($('#prompt').value);
+  const intent = currentIntent();
   const cfg = resolveConfig(intent);
-  const style = STYLES[cfg.style];
+  const style = tunedStyle(STYLES[cfg.style], cfg);
   const clips = state.clips;
   const rng = mulberry32(state.seed * 9973 + 17);
   scoreClips(clips, style, cfg);
@@ -805,7 +894,7 @@ function buildPlan() {
   if (hookEnd > 2.4 || hookEnd < 0.6) hookEnd = 1.3;
   if (H < hookEnd + 1.4) H = snapAfter(hookEnd + 1.4);
   H = snap(H);
-  let heroEnd = snap(H + clamp(D * 0.2, 2.4, 5) * (cfg.slowmo ? 1.25 : 1));
+  let heroEnd = snap(H + clamp(D * 0.2, 2.4, 5) * (cfg.slowmo > 0 ? 1 + 0.25 * cfg.slowmo : 1));
   if (heroEnd - H < 1.8) heroEnd = H + 2.2;
   let outroStart = snap(D - clamp(D * 0.15, 1.6, 3.2));
   if (outroStart > D - 1.2) outroStart = D - 1.4;
@@ -848,16 +937,17 @@ function buildPlan() {
     s.i = i; s.dur = s.end - s.start;
     const base = style.baseSpeed;
     if (s.section === 'hero') {
-      if (calm) s.profile = { type: 'const', v: 0.45 };
-      else { const lo = cfg.slowmo ? 0.25 : 0.35; s.profile = { type: 'ramp', keys: [[0, 1.5], [0.2, lo], [0.8, lo], [1, 1.3]] }; }
+      if (cfg.slowmo < 0) s.profile = { type: 'const', v: Math.max(1, base) };
+      else if (calm) s.profile = { type: 'const', v: 0.45 };
+      else { const lo = 0.35 - 0.1 * Math.max(0, cfg.slowmo); s.profile = { type: 'ramp', keys: [[0, 1.5], [0.2, lo], [0.8, lo], [1, 1.3]] }; }
     } else if (s.section === 'outro') s.profile = { type: 'const', v: Math.max(0.45, 0.6 * base) };
-    else if (s.section === 'hook') s.profile = { type: 'const', v: cfg.slowmo && style.key !== 'energetic' ? 0.6 : 1 };
+    else if (s.section === 'hook') s.profile = { type: 'const', v: cfg.slowmo >= 0.75 && style.key !== 'energetic' ? 0.6 : 1 };
     else {
       // build: occasional slow-mo accent; climax (post): keep energy up, never slow
       let v = base;
       const r = rng();
       if (style.key === 'energetic' && r < 0.2) v = 1.3;
-      else if (s.section === 'build' && style.key !== 'energetic' && r < 0.12 + cfg.slowmo * 0.2) v = 0.5;
+      else if (s.section === 'build' && style.key !== 'energetic' && cfg.slowmo >= 0 && r < 0.12 + cfg.slowmo * 0.2) v = 0.5;
       else if (s.section === 'post') v = Math.max(1, base);
       s.profile = { type: 'const', v };
     }
@@ -917,10 +1007,10 @@ function buildPlan() {
     let type;
     const canClose = zMax >= 1.35;
     if (s.section === 'hook') type = canClose && s.i === 0 ? 'close' : 'pushin';
-    else if (s.section === 'hero') type = canClose && (cfg.close || rng() < 0.4) ? 'close' : 'pushin';
+    else if (s.section === 'hero') type = canClose && (cfg.close > 0 || (cfg.close === 0 && rng() < 0.4)) ? 'close' : 'pushin';
     else if (s.section === 'outro') type = 'pullout';
     else {
-      const w = [['wide', 0.22], ['medium', 0.22], ['close', canClose ? 0.18 + cfg.close * 0.35 : 0], ['pushin', 0.16], ['pan', cov.sx < 0.8 ? 0.22 : 0], ['tilt', style.shake >= 0.5 || cfg.shake ? 0.07 : 0], ['pullout', 0.06]].filter(([t]) => t !== prevType);
+      const w = [['wide', 0.22], ['medium', 0.22], ['close', canClose ? Math.max(0.03, 0.18 + cfg.close * 0.35) : 0], ['pushin', 0.16], ['pan', cov.sx < 0.8 ? 0.22 : 0], ['tilt', style.shake >= 0.5 || cfg.shake ? 0.07 : 0], ['pullout', 0.06]].filter(([t]) => t !== prevType);
       type = pickWeighted(rng, w);
     }
     prevType = type;
@@ -982,10 +1072,15 @@ function buildPlan() {
   // ---- titles
   const texts = [];
   const T = cfg.texts;
-  if (T.length >= 1) texts.push({ text: T[0], t0: 0.35, t1: Math.max(1.8, Math.min(3.4, H - 0.3)), kind: 'title' });
-  if (T.length >= 3) texts.push({ text: T[1], t0: H + 0.3, t1: Math.min(heroEnd - 0.1, H + 2.3), kind: 'mid' });
-  if (T.length === 4) texts.push({ text: T[2], t0: heroEnd + 0.2, t1: Math.min(outroStart - 0.1, heroEnd + 2.0), kind: 'mid' });
-  if (T.length >= 2) texts.push({ text: T[T.length - 1], t0: outroStart + 0.25, t1: D - 0.15, kind: 'end' });
+  if (cfg.titleSpec && cfg.titleSpec.length) {
+    const spread = (items, a, b, kind) => { if (!items.length || b - a < 0.6) return; const w = (b - a) / items.length; items.forEach((it, i) => texts.push({ text: it.text, t0: a + i * w, t1: a + (i + 1) * w - 0.1, kind: i === 0 ? kind : (kind === 'title' ? 'mid' : kind) })); };
+    spread(cfg.titleSpec.filter((t) => t.when === 'opening'), 0.35, Math.max(1.8, H - 0.3), 'title');
+    spread(cfg.titleSpec.filter((t) => t.when === 'middle'), H + 0.3, outroStart - 0.2, 'mid');
+    spread(cfg.titleSpec.filter((t) => t.when === 'ending'), outroStart + 0.25, D - 0.15, 'end');
+  } else if (T.length >= 1) texts.push({ text: T[0], t0: 0.35, t1: Math.max(1.8, Math.min(3.4, H - 0.3)), kind: 'title' });
+  if (!cfg.titleSpec && T.length >= 3) texts.push({ text: T[1], t0: H + 0.3, t1: Math.min(heroEnd - 0.1, H + 2.3), kind: 'mid' });
+  if (!cfg.titleSpec && T.length === 4) texts.push({ text: T[2], t0: heroEnd + 0.2, t1: Math.min(outroStart - 0.1, heroEnd + 2.0), kind: 'mid' });
+  if (!cfg.titleSpec && T.length >= 2) texts.push({ text: T[T.length - 1], t0: outroStart + 0.25, t1: D - 0.15, kind: 'end' });
 
   const oa = cfg.W / cfg.H;
   const barsFrac = !cfg.bars ? 0 : oa < 0.9 ? 0.09 : oa < 1.2 ? 0.07 : Math.max(0, (1 - oa / 2.39) / 2);
@@ -1597,20 +1692,27 @@ function renderClipList() {
 }
 function invalidatePlan() { state.plan = null; $('#plan').classList.add('hidden'); }
 function renderIntent() {
-  const it = parsePrompt($('#prompt').value);
+  const it = currentIntent();
   const box = $('#intent'); box.innerHTML = '';
   const add = (txt, dim) => { const s = document.createElement('span'); s.className = `pill${dim ? ' dim' : ''}`; s.textContent = txt; box.appendChild(s); };
   const sv = $('#styleSel').value;
   const style = sv !== 'auto' ? sv : it.style || 'blockbuster';
   add(`🎨 ${STYLES[style].label}${sv === 'auto' && !it.style ? ' (default)' : ''}`);
-  if (it.slowmo) add('🐢 slow-mo ramp');
+  const aiState = state.ai; const typed = $('#prompt').value.trim();
+  if (it.ai) { if (it.summary) add(`🧠 ${it.summary}`); }
+  else if ($('#aiSel').value === 'on' && aiState && aiState.prompt === typed && aiState.err) add(`🧠 AI बंद: ${aiState.err} · keywords से चल रहा है`, true);
+  else if ($('#aiSel').value === 'on' && aiState && aiState.prompt !== typed && typed) add('✏️ प्रॉम्प्ट बदला · AI के लिए Analyze & Plan दोबारा दबाएँ', true);
+  if (it.slowmo > 0) add('🐢 slow-mo ramp'); if (it.slowmo < 0) add('🚫 no slow-mo');
   if (it.pace > 0) add('⚡ fast cuts'); if (it.pace < 0) add('🌊 calm pacing');
-  if (it.close) add('🔍 close-ups');
+  if (it.close > 0) add('🔍 close-ups'); if (it.close < 0) add('🔭 fewer close-ups');
   if (it.shake) add('💥 impact shake');
   if (it.letterbox === true) add('🎞 cinema bars'); if (it.letterbox === false) add('⬛ no bars');
   if (it.chrono) add('📖 story order');
   for (const t of it.texts) add(`🅣 “${t}”`);
-  if (!it.texts.length) add('Text जोड़ने के लिए उसे "quotes" में लिखें', true);
+  if (it.look) { const l = it.look; const bits = [l.warmth !== 'neutral' && l.warmth, l.saturation !== 'normal' && l.saturation, l.contrast !== 'normal' && l.contrast, l.grain && l.grain !== 'light' && `${l.grain} grain`].filter(Boolean); if (bits.length) add(`🎛 ${bits.join(' · ')}`); }
+  if (it.avoid && it.avoid.length) add(`🚫 ${it.avoid.join(', ')}`);
+  for (const n of it.notPossible || []) add(`✖ ${n}`, true);
+  if (!it.texts.length && !it.ai) add('Text जोड़ने के लिए उसे "quotes" में लिखें', true);
 }
 let replanTimer = 0;
 function scheduleReplan() {
@@ -1626,7 +1728,7 @@ const TR_LABEL = { cut: 'cut', whip: 'whip pan', zoom: 'zoom punch', flash: 'fla
 function showPlan(plan) {
   $('#plan').classList.remove('hidden');
   const m = plan.music;
-  $('#planHead').innerHTML = `<b>${escapeHtml(plan.style.label)}</b> · ${plan.D}s · ${plan.W}×${plan.H} · ${plan.fps}fps · <b>${plan.slots.length}</b> shots · ${Math.round(plan.bpm)} BPM${m ? ` · गाना ${fmtT(m.start)} से, drop @ ${plan.heroStart.toFixed(1)}s` : ' · auto score'}`;
+  $('#planHead').innerHTML = `${plan.cfg.ai ? '🧠 ' : ''}<b>${escapeHtml(plan.style.label)}</b> · ${plan.D}s · ${plan.W}×${plan.H} · ${plan.fps}fps · <b>${plan.slots.length}</b> shots · ${Math.round(plan.bpm)} BPM${m ? ` · गाना ${fmtT(m.start)} से, drop @ ${plan.heroStart.toFixed(1)}s` : ' · auto score'}`;
   const tl = $('#timeline'); tl.innerHTML = '';
   for (const s of plan.slots) { const d = document.createElement('div'); d.className = `sec-${s.section}`; d.style.flex = `${s.dur} 1 0`; d.title = `${SEC_LABEL[s.section]} ${s.start.toFixed(2)}–${s.end.toFixed(2)}s`; d.textContent = s.dur > plan.D * 0.08 ? SEC_LABEL[s.section] : ''; tl.appendChild(d); }
   const wl = $('#warnList'); wl.innerHTML = plan.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('');
@@ -1652,7 +1754,9 @@ async function onPlan() {
   setBusy(true); state.cancel = false;
   try {
     await analyzeAll();
-    setProgress($('#progress'), 1, 'एडिट प्लान तैयार ✓');
+    await askDirector((txt) => setProgress($('#progress'), 1, txt));
+    renderIntent(); renderDurChips();
+    setProgress($('#progress'), 1, state.ai && state.ai.direction && state.ai.prompt === $('#prompt').value.trim() ? 'एडिट प्लान तैयार ✓ (🧠 Claude ने प्रॉम्प्ट पढ़ा)' : 'एडिट प्लान तैयार ✓');
     state.plan = buildPlan();
     showPlan(state.plan);
   } catch (e) { console.error(e); showError(e.message || String(e)); } finally { setBusy(false); }
@@ -1702,7 +1806,7 @@ const DURATIONS = ['auto', 10, 15, 20, 30, 45, 60];
 function renderDurChips() {
   const box = $('#durChips'); box.innerHTML = '';
   const cur = $('#durSel').value;
-  const it = parsePrompt($('#prompt').value);
+  const it = currentIntent();
   for (const d of DURATIONS) {
     const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(String(d) === cur));
@@ -1815,7 +1919,7 @@ function init() {
     useMusic(() => loadMusic(f));
   });
   $('#prompt').addEventListener('input', scheduleReplan);
-  for (const id of ['#styleSel', '#durSel', '#aspectSel', '#qualSel', '#fpsSel', '#barsSel', '#origSel', '#sfxSel']) $(id).addEventListener('change', scheduleReplan);
+  for (const id of ['#styleSel', '#durSel', '#aspectSel', '#qualSel', '#fpsSel', '#barsSel', '#origSel', '#sfxSel', '#aiSel']) $(id).addEventListener('change', scheduleReplan);
   $('#planBtn').onclick = onPlan;
   $('#rerollBtn').onclick = () => { state.seed++; if (state.plan) { state.plan = buildPlan(); showPlan(state.plan); } };
   $('#renderBtn').onclick = onRender;
@@ -1825,7 +1929,7 @@ function init() {
 }
 init();
 // test hook (used by the automated smoke test only)
-window.__rawreel = { state, parsePrompt, buildPlan, analyzeMusic };
+window.__rawreel = { state, parsePrompt, buildPlan, analyzeMusic, intentFromDirection, currentIntent };
 </script>
 </body>
 </html>

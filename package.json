@@ -1,0 +1,8 @@
+{
+  "name": "rawreel",
+  "private": true,
+  "description": "On-device cinematic reel editor (static site + Vercel functions)",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0"
+  }
+}
