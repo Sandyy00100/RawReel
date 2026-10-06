@@ -96,11 +96,15 @@
     // sample description → codec string + decoder description
     const stsd = sub.stsd;
     const entry = boxesIn(dv, stsd.start + 8, stsd.end)[0];
-    const etype = type4(dv, entry.start - 4);
+    let etype = type4(dv, entry.start - 4);
     const codedWidth = dv.getUint16(entry.start + 24), codedHeight = dv.getUint16(entry.start + 26);
     const cfgBoxes = boxesIn(dv, entry.start + 78, entry.end);
     const bytes = (b) => new Uint8Array(dv.buffer, dv.byteOffset + b.start, b.end - b.start).slice();
     let codec, description = null;
+    // Dolby Vision profile 8/9 (common on Android "HDR" recordings) carries a
+    // normal HEVC/AVC base layer: decode it as plain HEVC/AVC.
+    const DV = { dvh1: 'hvc1', dvhe: 'hev1', dva1: 'avc1', dvav: 'avc3' };
+    if (DV[etype]) etype = DV[etype];
     if (etype === 'avc1' || etype === 'avc3') {
       const c = cfgBoxes.find((b) => b.type === 'avcC'); if (!c) throw new Error('no avcC');
       description = bytes(c);
@@ -187,11 +191,17 @@
       if (info.description) config.description = info.description;
       let sup;
       try { sup = await root.VideoDecoder.isConfigSupported(config); } catch (e) { sup = { supported: false }; }
-      if (!sup.supported) return null;
+      if (!sup.supported) throw new Error(`${info.codec} not supported by this device's decoder`);
       const s = new DecodedSource(file, info, config);
-      const f = await s.frameAt(Math.min(0.1, info.duration / 2));
-      const w = f.displayWidth, h = f.displayHeight;
-      s.width = s.rotation % 180 ? h : w; s.height = s.rotation % 180 ? w : h;
+      try {
+        const f = await s.frameAt(Math.min(0.1, info.duration / 2));
+        const w = f.displayWidth, h = f.displayHeight;
+        s.width = s.rotation % 180 ? h : w; s.height = s.rotation % 180 ? w : h;
+      } catch (e) {
+        s.close(); // give the hardware decoder back, or Chrome's own player can't open the file either
+        throw new Error(`${info.codec}: ${(e && e.message) || e}`);
+      }
+      s.release(); // free the hardware until analysis/render needs it
       return s;
     }
     _wake() { const w = this.wakers; this.wakers = []; for (const r of w) r(); }

@@ -121,7 +121,7 @@ check(i.texts.length === 2 && i.texts[0][0] === 'मेरी कहानी' &
 check(i.pills.some((p) => p.includes('धीमी')) && i.pills.some((p) => p.startsWith('✖') && p.includes('visuals')), 'summary and not-possible items shown');
 check(s.calls === 1 && s.callsAfterReroll === 1, 'one API call per Analyze; re-roll is free');
 const n = await session('nokey');
-check(!n.info.ai && n.info.pills.some((p) => p.includes('ANTHROPIC_API_KEY')), 'no key → keyword mode with a clear note');
+check(!n.info.ai && !n.info.pills.some((p) => p.includes('AI')), 'no key (free mode) → keyword mode, no AI warning shown');
 await browser.close(); fake.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');
 process.exit(failures ? 1 : 0);

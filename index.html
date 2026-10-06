@@ -393,7 +393,7 @@ function readCode() { try { return localStorage.getItem('rawreel-code') || ''; }
 function saveCode(c) { try { localStorage.setItem('rawreel-code', c); } catch (e) { /* ignore */ } }
 async function askDirector(onStatus) {
   const prompt = $('#prompt').value.trim();
-  if ($('#aiSel').value !== 'on' || !prompt) return;
+  if ($('#aiSel').value !== 'on' || !prompt || state.aiNoKey) return;
   if (state.ai && state.ai.prompt === prompt && state.ai.direction) return; // already read this exact prompt
   onStatus('🧠 Claude आपका प्रॉम्प्ट समझ रहा है…');
   const dv = $('#durSel').value;
@@ -414,6 +414,7 @@ async function askDirector(onStatus) {
     }
     let d = {}; try { d = await r.json(); } catch (e) { /* ignore */ }
     if (r.ok && d.direction) { state.ai = { prompt, direction: d.direction }; return; }
+    if (d.error === 'no_key' || r.status === 404 || r.status === 405) { state.aiNoKey = true; state.ai = null; return; } // free mode: no key configured, stay quiet
     const why = { no_key: 'Vercel में ANTHROPIC_API_KEY सेट नहीं है', bad_key: 'API key गलत है', code: 'Access code गलत है', rate_limited: 'AI अभी busy है', timeout: 'AI ने समय पर जवाब नहीं दिया', refused: 'AI ने यह प्रॉम्प्ट नहीं लिया' }[d.error] || `AI error (${d.error || r.status})`;
     state.ai = { prompt, err: why };
     return;
@@ -456,7 +457,7 @@ async function createVideoEl(clip) {
   try {
     await new Promise((res, rej) => {
       v.addEventListener('loadedmetadata', res, { once: true });
-      v.addEventListener('error', () => rej(new Error('decode')), { once: true });
+      v.addEventListener('error', () => { const me = v.error; rej(new Error(me ? `${['', 'aborted', 'network', 'decode', 'format not supported'][me.code] || me.code}${me.message ? ': ' + me.message : ''}` : 'decode')); }, { once: true });
       setTimeout(() => rej(new Error('timeout')), 20000);
     });
     if (!isFinite(v.duration)) {
@@ -469,7 +470,9 @@ async function createVideoEl(clip) {
     if (!v.videoWidth || !isFinite(v.duration) || v.duration <= 0) throw new Error('decode');
   } catch (e) {
     v.remove();
-    throw new Error(`"${clip.name}" इस ब्राउज़र में नहीं चल पा रही (codec support नहीं है)। Chrome में खोलें या फ़ोन की camera setting में "Most compatible / H.264" चुनें।`);
+    const err = new Error(`"${clip.name}" इस ब्राउज़र में नहीं चल पा रही (codec support नहीं है)। Chrome में खोलें या फ़ोन की camera setting में "Most compatible / H.264" चुनें।`);
+    err.reason = e.message;
+    throw err;
   }
   if (clip.video) clip.video.remove();
   clip.video = v;
@@ -516,12 +519,26 @@ function drawRotated(ctx, src, rot, W, H) {
 async function loadClip(file) {
   const url = URL.createObjectURL(file);
   const clip = { id: state.nextId++, file, url, video: null, dec: null, rot: 0, name: file.name, dur: 0, w: 0, h: 0, samples: null, fps: 30, audioBuf: undefined, thumb: null };
+  let decWhy = 'not tried';
   try {
     const dec = window.RawDemux ? await RawDemux.DecodedSource.open(file) : null;
     if (dec) { clip.dec = dec; clip.rot = dec.rotation; clip.dur = dec.duration; clip.w = dec.width; clip.h = dec.height; clip.fps = dec.fps; }
-  } catch (e) { console.warn('fast decoder unavailable for', file.name, e); clip.dec = null; }
+    else decWhy = 'WebCodecs not available';
+  } catch (e) { console.warn('fast decoder unavailable for', file.name, e); clip.dec = null; decWhy = e.message || String(e); }
   if (!clip.dec) {
-    try { await createVideoEl(clip); } catch (e) { URL.revokeObjectURL(url); throw e; }
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2 && !clip.video; attempt++) {
+      if (attempt) await sleep(800); // give a just-released hardware decoder time to free up
+      try { await createVideoEl(clip); } catch (e) { lastErr = e; }
+    }
+    if (!clip.video) {
+      URL.revokeObjectURL(url);
+      const hevc = /hvc1|hev1|hevc/i.test(decWhy);
+      const msg = `"${file.name}" इस फ़ोन के Chrome में नहीं खुल पाई।` +
+        (hevc ? ' यह HEVC/HDR ("High efficiency") वीडियो है जिसे यह फ़ोन ब्राउज़र में decode नहीं कर पा रहा। Camera settings में video format "H.264 / Most compatible" और HDR video Off करके दोबारा शूट करें, या वीडियो को किसी editor से MP4 (H.264) में export करें।' : ' Camera settings में "H.264 / Most compatible" चुनें या वीडियो को MP4 (H.264) में export करके डालें।') +
+        `\n(Details: fast decoder: ${decWhy}; Chrome player: ${(lastErr && (lastErr.reason || lastErr.message)) || 'failed'})`;
+      throw new Error(msg);
+    }
   }
   try {
     const c = document.createElement('canvas'); c.width = 240; c.height = Math.round(240 * clip.h / clip.w);
@@ -1701,7 +1718,7 @@ function renderIntent() {
   const aiState = state.ai; const typed = $('#prompt').value.trim();
   if (it.ai) { if (it.summary) add(`🧠 ${it.summary}`); }
   else if ($('#aiSel').value === 'on' && aiState && aiState.prompt === typed && aiState.err) add(`🧠 AI बंद: ${aiState.err} · keywords से चल रहा है`, true);
-  else if ($('#aiSel').value === 'on' && aiState && aiState.prompt !== typed && typed) add('✏️ प्रॉम्प्ट बदला · AI के लिए Analyze & Plan दोबारा दबाएँ', true);
+  else if ($('#aiSel').value === 'on' && !state.aiNoKey && aiState && aiState.prompt !== typed && typed) add('✏️ प्रॉम्प्ट बदला · AI के लिए Analyze & Plan दोबारा दबाएँ', true);
   if (it.slowmo > 0) add('🐢 slow-mo ramp'); if (it.slowmo < 0) add('🚫 no slow-mo');
   if (it.pace > 0) add('⚡ fast cuts'); if (it.pace < 0) add('🌊 calm pacing');
   if (it.close > 0) add('🔍 close-ups'); if (it.close < 0) add('🔭 fewer close-ups');
