@@ -82,6 +82,33 @@ a.btn{text-decoration:none;text-align:center;display:inline-grid;place-items:cen
 #vidpool{position:fixed;right:0;bottom:0;width:2px;height:2px;overflow:hidden;opacity:.01;pointer-events:none;z-index:-1}
 #vidpool video{width:2px;height:2px}
 .err{color:#ff8a7a;font-size:14px;margin-top:10px;white-space:pre-wrap}
+.musicbtn{width:100%;background:transparent;font:inherit;font-size:15px;color:var(--text)}
+.durlabel{font-size:12px;color:var(--muted);margin:12px 0 6px}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.seg button{flex:none;min-width:52px;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:8px 12px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.seg button[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:#1a1205}
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:640px;height:88vh;height:88dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;border:1px solid var(--line);border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font-size:17px}
+.iconbtn{background:var(--card2);border:1px solid var(--line);color:var(--text);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px}
+.sheet-search{padding:6px 16px}
+.sheet-search input{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:11px 14px;font:inherit;font-size:16px}
+.moods{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;scrollbar-width:none;flex:none}
+.moods button{flex:none;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+.moods button.on{border-color:var(--accent);color:var(--accent)}
+.sheet-actions{display:flex;gap:8px;padding:2px 16px 8px;flex-wrap:wrap}
+.sheet-actions .chip{display:inline-flex;align-items:center}
+.tracks{flex:1;overflow-y:auto;padding:0 8px;border-top:1px solid var(--line)}
+.track{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--line)}
+.track .play{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--card2);color:var(--text);font-size:15px;cursor:pointer}
+.track .play.on{background:var(--accent);color:#1a1205}
+.track .info{flex:1;min-width:0}
+.track .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .a{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .use{flex:none;background:var(--accent);color:#1a1205;border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+.tracks .msg{color:var(--muted);text-align:center;padding:28px 12px;font-size:14px}
+.sheet-foot{font-size:11px;color:var(--muted);padding:8px 16px 12px;margin:0;border-top:1px solid var(--line)}
+.credit{font-size:12px;color:var(--muted);margin-top:6px;word-break:break-word}
 footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text-align:center}
 @media (max-width:380px){.grid{grid-template-columns:1fr}}
 </style>
@@ -100,21 +127,21 @@ footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text
 
   <section class="card">
     <h2><b>2</b> म्यूज़िक <small>optional · beat-sync</small></h2>
-    <label class="drop small"><input type="file" id="musicInput" accept="audio/*,video/*">+ गाना चुनें (cuts बीट पर लगेंगे)</label>
+    <button type="button" class="drop small musicbtn" id="openMusic">🎵 गाना चुनें · Add music</button>
     <div id="musicInfo" class="note"></div>
-    <p class="note">म्यूज़िक नहीं डाला तो ऐप खुद एक cinematic background score और sound effects बनाएगा।</p>
+    <p class="note" id="musicHint">म्यूज़िक नहीं डाला तो ऐप खुद एक cinematic background score और sound effects बनाएगा।</p>
   </section>
 
   <section class="card">
     <h2><b>3</b> प्रॉम्प्ट <small>Prompt</small></h2>
     <textarea id="prompt" rows="3" placeholder='जैसे: Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"'></textarea>
-    <div class="chips" id="examples"></div>
+    <div class="durlabel">रील की लंबाई · Duration</div>
+    <div class="seg" id="durChips" role="radiogroup" aria-label="Duration"></div>
     <div id="intent" class="intent"></div>
     <details class="adv">
       <summary>Settings (प्रॉम्प्ट से auto set होती हैं)</summary>
       <div class="grid">
         <label>Style<select id="styleSel"><option value="auto">Auto (प्रॉम्प्ट से)</option></select></label>
-        <label>Duration<select id="durSel"><option value="auto">Auto (प्रॉम्प्ट से / 15s)</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
         <label>Format<select id="aspectSel"><option value="9:16">9:16 Reels / Shorts</option><option value="4:5">4:5 Feed</option><option value="1:1">1:1 Square</option><option value="16:9">16:9 YouTube</option></select></label>
         <label>Quality<select id="qualSel"><option value="1080">1080p</option><option value="720">720p (fast)</option></select></label>
         <label>Frame rate<select id="fpsSel"><option value="30">30 fps</option><option value="24">24 fps (film)</option><option value="60">60 fps</option></select></label>
@@ -157,6 +184,26 @@ footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text
 </main>
 <footer>RawReel · on-device video editing · no uploads</footer>
 <div id="vidpool" aria-hidden="true"></div>
+<select id="durSel" hidden aria-hidden="true"><option value="auto">auto</option><option>10</option><option>15</option><option>20</option><option>30</option><option>45</option><option>60</option></select>
+
+<div class="sheet-backdrop hidden" id="musicSheet" role="dialog" aria-modal="true" aria-label="Music">
+  <div class="sheet">
+    <div class="sheet-head">
+      <b>Music</b>
+      <button type="button" class="iconbtn" id="closeMusic" aria-label="Close">✕</button>
+    </div>
+    <div class="sheet-search">
+      <input type="search" id="musicSearch" placeholder="गाने खोजें · Search music" autocomplete="off" enterkeyhint="search">
+    </div>
+    <div class="moods" id="musicMoods"></div>
+    <div class="sheet-actions">
+      <label class="chip"><input type="file" id="musicInput" accept="audio/*,video/*" hidden>📁 फ़ोन से गाना · From phone</label>
+      <button type="button" class="chip" id="noMusic">🎼 बिना गाने के · Auto score</button>
+    </div>
+    <div class="tracks" id="trackList"></div>
+    <p class="sheet-foot">Library: Creative Commons music via Openverse, free to use in reels with credit. Bollywood/trending गाने यहाँ नहीं मिलते; उन्हें "From phone" से डालें या Instagram में post करते समय जोड़ें।</p>
+  </div>
+</div>
 
 <script src="vendor/mp4-muxer.js"></script>
 <script>
@@ -252,6 +299,24 @@ function hasTerm(text, term) {
   }
   return text.includes(term);
 }
+// Finds the reel length in free text. Numbers near words like "duration/reel/video"
+// win; tiny values ("0.5 sec slow-mo", "2-3 seconds") are ignored.
+function parseDuration(text) {
+  const cands = [];
+  const re = /(\d{1,3}(?:\.\d+)?)\s*-?\s*(seconds|second|secs|sec|s|minutes|minute|mins|min|सेकंड|सेकेंड|सेकण्ड|मिनट)(?![a-z])/g;
+  let m;
+  while ((m = re.exec(text))) {
+    let v = parseFloat(m[1]);
+    if (/^(min|मिनट)/.test(m[2])) v *= 60;
+    const ctx = text.slice(Math.max(0, m.index - 30), m.index + m[0].length + 30);
+    cands.push({ v, strong: /(duration|long|length|reel|video|total|लंबी|लंबा|लंबाई|रील|अवधि|वीडियो)/.test(ctx) });
+  }
+  if (/half (a )?minute|आधा मिनट/.test(text)) cands.push({ v: 30, strong: true });
+  const pool = cands.filter((c) => c.v >= 5 && c.v <= 90);
+  if (!pool.length) return null;
+  const strong = pool.filter((c) => c.strong);
+  return clamp(Math.round(Math.max(...(strong.length ? strong : pool).map((c) => c.v))), 6, 60);
+}
 function parsePrompt(raw) {
   const original = String(raw || '');
   const texts = [];
@@ -270,9 +335,7 @@ function parsePrompt(raw) {
   for (const [k, list] of Object.entries(FLAG_KW)) f[k] = list.some((term) => hasTerm(text, term));
   let style = null; let best = 0;
   for (const [k, v] of Object.entries(scores)) if (v > best) { best = v; style = k; }
-  let duration = null;
-  const dm = text.match(/(\d{1,2})\s*(?:s\b|sec\b|secs\b|second|seconds|सेकंड|सेकेंड|सेकण्ड)/);
-  if (dm) duration = clamp(parseInt(dm[1], 10), 6, 60);
+  const duration = parseDuration(text);
   return {
     style, scores, texts, duration,
     slowmo: f.slowmo ? 1 : 0,
@@ -594,14 +657,32 @@ function analyzeMusic(audio) {
   result.dropTime = dropIdx >= 0 ? beats[dropIdx] : beats[Math.floor(beats.length * 0.3)] || 0;
   return result;
 }
-async function loadMusic(file) {
-  const buf = await file.arrayBuffer();
+async function decodeMusic(buf, name, extra) {
   const ctx = new OfflineAudioContext(2, 48000, 48000);
   let audio;
-  try { audio = await ctx.decodeAudioData(buf); } catch (e) { throw new Error(`"${file.name}" का ऑडियो नहीं पढ़ पाए। MP3/M4A/WAV फ़ाइल try करें।`); }
+  try { audio = await ctx.decodeAudioData(buf); } catch (e) { throw new Error(`"${name}" का ऑडियो नहीं पढ़ पाए। MP3/M4A/WAV फ़ाइल try करें।`); }
   await sleep(10);
   const ana = analyzeMusic(audio);
-  return { file, name: file.name, audio, ...ana };
+  return { name, audio, ...ana, ...(extra || {}) };
+}
+async function loadMusic(file) { return decodeMusic(await file.arrayBuffer(), file.name, { file }); }
+// Library tracks are fetched through our own /api/audio proxy in chunks
+// (the song hosts don't allow direct browser downloads, and each function
+// response must stay under Vercel's 4.5 MB limit).
+async function downloadTrack(id, onProg) {
+  const CH = 3800 * 1024; const parts = []; let start = 0, total = 0, got = 0;
+  for (let i = 0; i < 12; i++) {
+    const r = await fetch(`/api/audio?id=${encodeURIComponent(id)}&start=${start}&end=${start + CH - 1}`);
+    if (!r.ok) throw new Error('यह गाना डाउनलोड नहीं हो पाया। कोई दूसरा गाना चुनें।');
+    total = parseInt(r.headers.get('X-Total-Length') || '0', 10) || total;
+    const b = new Uint8Array(await r.arrayBuffer());
+    if (!b.length) break;
+    parts.push(b); got += b.length; start += b.length;
+    if (onProg && total) onProg(got / total);
+    if (!total || got >= total) break;
+  }
+  const out = new Uint8Array(got); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+  return out.buffer;
 }
 
 /* ============================================================
@@ -1380,17 +1461,9 @@ async function renderReel(plan, ui) {
 /* ============================================================
    UI
    ============================================================ */
-const EXAMPLES = [
-  'Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"',
-  'तेज़ और जोशीली gym reel, fast cuts, shake, "NO EXCUSES"',
-  'Romantic dreamy wedding reel, soft slow motion, "Forever" "Riya & Arjun"',
-  'Moody night city reel, neon lights, "lost in the city"',
-  'Vintage film look, story of our trip, 20 sec, "Summer Memories" "The End"',
-  'Black and white noir, dramatic, close up, "SILENCE"',
-];
 function setProgress(el, frac, text) { el.classList.remove('hidden'); el.querySelector('i').style.width = `${Math.round(clamp(frac, 0, 1) * 100)}%`; el.querySelector('.ptext').textContent = text; }
 function showError(msg) { const b = $('#errBox'); if (!msg) { b.classList.add('hidden'); return; } b.textContent = msg; b.classList.remove('hidden'); }
-function setBusy(b) { state.busy = b; for (const id of ['#planBtn', '#rerollBtn', '#renderBtn', '#clipInput', '#musicInput']) $(id).disabled = b; }
+function setBusy(b) { state.busy = b; for (const id of ['#planBtn', '#rerollBtn', '#renderBtn', '#clipInput', '#musicInput', '#openMusic']) $(id).disabled = b; }
 function renderClipList() {
   const box = $('#clipList'); box.innerHTML = '';
   state.clips.forEach((c, i) => {
@@ -1408,7 +1481,6 @@ function renderIntent() {
   const sv = $('#styleSel').value;
   const style = sv !== 'auto' ? sv : it.style || 'blockbuster';
   add(`🎨 ${STYLES[style].label}${sv === 'auto' && !it.style ? ' (default)' : ''}`);
-  const d = $('#durSel').value !== 'auto' ? +$('#durSel').value : it.duration || 15; add(`⏱ ${d}s`);
   if (it.slowmo) add('🐢 slow-mo ramp');
   if (it.pace > 0) add('⚡ fast cuts'); if (it.pace < 0) add('🌊 calm pacing');
   if (it.close) add('🔍 close-ups');
@@ -1421,6 +1493,7 @@ function renderIntent() {
 let replanTimer = 0;
 function scheduleReplan() {
   renderIntent();
+  renderDurChips();
   if (!state.clips.length || !state.clips.every((c) => c.samples)) return;
   clearTimeout(replanTimer);
   replanTimer = setTimeout(() => { if (!state.busy) { try { state.plan = buildPlan(); showPlan(state.plan); } catch (e) { showError(e.message); } } }, 350);
@@ -1484,7 +1557,7 @@ async function onRender() {
     const name = `rawreel-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.mp4`;
     const a = $('#dlLink'); a.href = state.resultUrl; a.download = name;
     const file = new File([res.blob], name, { type: 'video/mp4' });
-    $('#shareBtn').onclick = async () => { try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'RawReel' }); else a.click(); } catch (e) { /* user cancelled */ } };
+    $('#shareBtn').onclick = async () => { try { if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'RawReel', text: state.music && state.music.credit ? `Music: ${state.music.credit}` : undefined }); else a.click(); } catch (e) { /* user cancelled */ } };
     $('#resultActions').classList.remove('hidden'); $('#renderCtl').classList.add('hidden');
     const secs = ((performance.now() - t0) / 1000).toFixed(0);
     setProgress(rp, 1, `Done ✓ ${(res.blob.size / 1048576).toFixed(1)} MB · ${res.W}×${res.H} · ${res.codec.split('.')[0]}${res.audioCodec ? ' + ' + res.audioCodec.split('.')[0] : ''} · ${secs}s में बनी`);
@@ -1499,11 +1572,105 @@ async function onRender() {
     wakeLock = null;
   }
 }
+const DURATIONS = ['auto', 10, 15, 20, 30, 45, 60];
+function renderDurChips() {
+  const box = $('#durChips'); box.innerHTML = '';
+  const cur = $('#durSel').value;
+  const it = parsePrompt($('#prompt').value);
+  for (const d of DURATIONS) {
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(String(d) === cur));
+    b.textContent = d === 'auto' ? `Auto · ${it.duration || 15}s` : `${d}s`;
+    b.onclick = () => { $('#durSel').value = String(d); renderDurChips(); scheduleReplan(); };
+    box.appendChild(b);
+  }
+}
+function setMusicInfo() {
+  const m = state.music; const box = $('#musicInfo');
+  $('#musicHint').classList.toggle('hidden', !!m);
+  if (!m) { box.textContent = ''; $('#openMusic').textContent = '🎵 गाना चुनें · Add music'; return; }
+  $('#openMusic').textContent = '🎵 गाना बदलें · Change music';
+  box.innerHTML = `🎵 <b>${escapeHtml(m.title || m.name)}</b>${m.artist ? ` · ${escapeHtml(m.artist)}` : ''} · ${fmtT(m.duration)} · ~${Math.round(m.bpm)} BPM · drop @ ${fmtT(m.dropTime)} <button class="chip" id="rmMusic" type="button">Remove</button>` +
+    (m.credit ? `<div class="credit">Credit (post caption में डालें): ${escapeHtml(m.credit)} <button class="chip" id="copyCredit" type="button">Copy</button></div>` : '');
+  $('#rmMusic').onclick = () => { state.music = null; setMusicInfo(); scheduleReplan(); };
+  if (m.credit) $('#copyCredit').onclick = async () => { try { await navigator.clipboard.writeText(m.credit); $('#copyCredit').textContent = 'Copied ✓'; } catch (e) { /* ignore */ } };
+}
+async function useMusic(loader) {
+  showError(null); setBusy(true); $('#musicInfo').textContent = 'गाना analyze हो रहा है (beats, drop)…';
+  try { state.music = await loader((txt) => { $('#musicInfo').textContent = txt; }); } catch (e) { state.music = null; showError(e.message); }
+  setMusicInfo(); setBusy(false); scheduleReplan();
+}
+const MOODS = [['🔥 Cinematic', 'cinematic'], ['⚡ Energetic', 'energetic'], ['💪 Workout', 'workout'], ['🎧 Lofi', 'lofi'], ['🎤 Hip hop', 'hip hop'], ['❤️ Romantic', 'romantic'], ['🇮🇳 Indian', 'indian'], ['🎸 Acoustic', 'acoustic'], ['🌧 Sad', 'sad piano'], ['😊 Happy', 'happy'], ['🌆 Electronic', 'electronic'], ['🎻 Epic', 'epic orchestral']];
+const preview = new Audio(); preview.preload = 'none';
+let previewBtn = null; let searchCtl = null; let searchTimer = 0;
+function stopPreview() { preview.pause(); if (previewBtn) { previewBtn.classList.remove('on'); previewBtn.textContent = '▶'; } previewBtn = null; }
+function closeMusicSheet() { stopPreview(); $('#musicSheet').classList.add('hidden'); document.body.style.overflow = ''; }
+function openMusicSheet() {
+  $('#musicSheet').classList.remove('hidden'); document.body.style.overflow = 'hidden';
+  if (!$('#trackList').children.length) searchMusic(MOODS[0][1], 0);
+}
+async function searchMusic(q, moodIdx) {
+  document.querySelectorAll('#musicMoods button').forEach((b, i) => b.classList.toggle('on', i === moodIdx));
+  const list = $('#trackList');
+  list.innerHTML = '<div class="msg">खोज रहे हैं…</div>';
+  if (searchCtl) searchCtl.abort();
+  searchCtl = new AbortController();
+  try {
+    const r = await fetch(`/api/music?q=${encodeURIComponent(q)}`, { signal: searchCtl.signal });
+    if (!r.ok) throw new Error(String(r.status));
+    const d = await r.json();
+    renderTracks(d.results || []);
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    list.innerHTML = '<div class="msg">Music library अभी नहीं खुल पाई। इंटरनेट चेक करें, या "From phone" से गाना चुनें।</div>';
+  }
+}
+function renderTracks(tracks) {
+  const list = $('#trackList'); list.innerHTML = '';
+  if (!tracks.length) { list.innerHTML = '<div class="msg">कोई गाना नहीं मिला। दूसरा शब्द try करें।</div>'; return; }
+  for (const t of tracks) {
+    const row = document.createElement('div'); row.className = 'track';
+    const dur = t.duration ? fmtT(t.duration / 1000).replace(/\.\d$/, '') : '';
+    row.innerHTML = `<button class="play" type="button" aria-label="Preview">▶</button><div class="info"><div class="t">${escapeHtml(t.title || 'Untitled')}</div><div class="a">${escapeHtml(t.creator || 'Unknown')}${dur ? ' · ' + dur : ''} · ${escapeHtml((t.license || '').toUpperCase())}</div></div><button class="use" type="button">Use</button>`;
+    const pb = row.querySelector('.play');
+    pb.onclick = () => {
+      if (previewBtn === pb) { stopPreview(); return; }
+      stopPreview();
+      preview.src = t.url; previewBtn = pb; pb.classList.add('on'); pb.textContent = '❚❚';
+      preview.play().catch(() => { pb.textContent = '✕'; pb.classList.remove('on'); previewBtn = null; });
+    };
+    row.querySelector('.use').onclick = () => {
+      closeMusicSheet();
+      useMusic(async (status) => {
+        status('गाना डाउनलोड हो रहा है… 0%');
+        const buf = await downloadTrack(t.id, (f) => status(`गाना डाउनलोड हो रहा है… ${Math.round(f * 100)}%`));
+        status('गाना analyze हो रहा है (beats, drop)…');
+        return decodeMusic(buf, t.title || 'Track', { title: t.title, artist: t.creator, credit: t.attribution || `"${t.title}" by ${t.creator} (${(t.license || '').toUpperCase()})` });
+      });
+    };
+    list.appendChild(row);
+  }
+}
+function initMusicSheet() {
+  const moods = $('#musicMoods');
+  MOODS.forEach(([label, q], i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { $('#musicSearch').value = ''; searchMusic(q, i); }; moods.appendChild(b); });
+  $('#openMusic').onclick = openMusicSheet;
+  $('#closeMusic').onclick = closeMusicSheet;
+  $('#musicSheet').addEventListener('click', (e) => { if (e.target.id === 'musicSheet') closeMusicSheet(); });
+  $('#noMusic').onclick = () => { closeMusicSheet(); state.music = null; setMusicInfo(); scheduleReplan(); };
+  $('#musicSearch').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    const q = e.target.value.trim();
+    searchTimer = setTimeout(() => { if (q.length >= 2) searchMusic(q, -1); }, 450);
+  });
+  preview.addEventListener('ended', stopPreview);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#musicSheet').classList.contains('hidden')) closeMusicSheet(); });
+}
 function init() {
   const sel = $('#styleSel');
   for (const [k, s] of Object.entries(STYLES)) { const o = document.createElement('option'); o.value = k; o.textContent = s.label; sel.appendChild(o); }
-  const ex = $('#examples');
-  for (const e of EXAMPLES) { const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = e; b.onclick = () => { $('#prompt').value = e; scheduleReplan(); }; ex.appendChild(b); }
+  renderDurChips();
+  initMusicSheet();
   $('#clipInput').addEventListener('change', async (ev) => {
     const files = [...ev.target.files]; ev.target.value = '';
     showError(null); setBusy(true);
@@ -1516,16 +1683,10 @@ function init() {
     if (errs.length) showError(errs.join('\n'));
     setBusy(false); invalidatePlan();
   });
-  $('#musicInput').addEventListener('change', async (ev) => {
+  $('#musicInput').addEventListener('change', (ev) => {
     const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
-    showError(null); setBusy(true); $('#musicInfo').textContent = 'गाना analyze हो रहा है (beats, drop)…';
-    try {
-      state.music = await loadMusic(f);
-      const m = state.music;
-      $('#musicInfo').innerHTML = `🎵 <b>${escapeHtml(m.name)}</b> · ${fmtT(m.duration)} · ~${Math.round(m.bpm)} BPM · drop @ ${fmtT(m.dropTime)} <button class="chip" id="rmMusic" type="button">Remove</button>`;
-      $('#rmMusic').onclick = () => { state.music = null; $('#musicInfo').textContent = ''; scheduleReplan(); };
-    } catch (e) { state.music = null; $('#musicInfo').textContent = ''; showError(e.message); }
-    setBusy(false); scheduleReplan();
+    closeMusicSheet();
+    useMusic(() => loadMusic(f));
   });
   $('#prompt').addEventListener('input', scheduleReplan);
   for (const id of ['#styleSel', '#durSel', '#aspectSel', '#qualSel', '#fpsSel', '#barsSel', '#origSel', '#sfxSel']) $(id).addEventListener('change', scheduleReplan);
