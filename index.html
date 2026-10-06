@@ -174,6 +174,7 @@ footer{max-width:640px;margin:20px auto 0;color:var(--muted);font-size:12px;text
     <h2><b>5</b> आपकी रील <small>Output</small></h2>
     <div class="screen" id="screen"></div>
     <div id="renderProgress" class="progress"><div class="bar"><i></i></div><span class="ptext"></span></div>
+    <div id="renderErr" class="err hidden"></div>
     <div class="row" id="renderCtl"><button id="cancelBtn" class="btn">Cancel</button></div>
     <div class="row hidden" id="resultActions">
       <a id="dlLink" class="btn primary" download>⬇ Download MP4</a>
@@ -1350,42 +1351,81 @@ async function renderAudio(plan) {
 /* ============================================================
    Export: WebCodecs (H.264/VP9/AV1 + AAC/Opus) → MP4
    ============================================================ */
-async function pickVideoCodec(W, H, fps) {
-  const br = Math.round((W * H * fps) / (1080 * 1920 * 30) * 12e6);
+// Encoder settings to try, best first. Phones' hardware encoders sometimes
+// accept a config and then fail mid-encode, so the render retries down this list.
+function videoCandidates(W, H, fps) {
   const hi = fps > 30 ? '2A' : '28';
-  const cands = [[`avc1.6400${hi}`, 'avc'], [`avc1.4D00${hi}`, 'avc'], [`avc1.4200${hi}`, 'avc'], ['vp09.00.40.08', 'vp9'], ['av01.0.08M.08', 'av1']];
-  for (const [codec, mux] of cands) {
-    const config = { codec, width: W, height: H, bitrate: br, framerate: fps, latencyMode: 'quality' };
-    if (mux === 'avc') config.avc = { format: 'avc' };
-    try { const s = await VideoEncoder.isConfigSupported(config); if (s.supported) return { config, mux }; } catch (e) { /* next */ }
-  }
-  return null;
+  const base = { width: W, height: H, bitrate: Math.round((W * H * fps) / (1080 * 1920 * 30) * 12e6), framerate: fps };
+  return [
+    { label: 'H.264 High', mux: 'avc', config: { ...base, codec: `avc1.6400${hi}`, avc: { format: 'avc' }, latencyMode: 'quality' } },
+    { label: 'H.264 Main', mux: 'avc', config: { ...base, codec: `avc1.4D00${hi}`, avc: { format: 'avc' } } },
+    { label: 'H.264 Baseline', mux: 'avc', config: { ...base, codec: `avc1.4200${hi}`, avc: { format: 'avc' } } },
+    { label: 'H.264 software', mux: 'avc', config: { ...base, codec: `avc1.4200${hi}`, avc: { format: 'avc' }, hardwareAcceleration: 'prefer-software' } },
+    { label: 'VP9', mux: 'vp9', config: { ...base, codec: 'vp09.00.40.08' } },
+    { label: 'AV1', mux: 'av1', config: { ...base, codec: 'av01.0.08M.08' } },
+  ];
 }
-async function pickAudioCodec() {
-  if (!('AudioEncoder' in window)) return null;
-  for (const [codec, mux] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]) {
-    const config = { codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 192000 };
-    try { const s = await AudioEncoder.isConfigSupported(config); if (s.supported) return { config, mux }; } catch (e) { /* next */ }
+async function supportedVideo(W, H, fps) {
+  const out = [];
+  for (const c of videoCandidates(W, H, fps)) {
+    try { const s = await VideoEncoder.isConfigSupported(c.config); if (s.supported) out.push(c); } catch (e) { /* skip */ }
   }
-  return null;
+  return out;
+}
+async function supportedAudio() {
+  const out = [];
+  if ('AudioEncoder' in window) {
+    for (const [codec, mux] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]) {
+      const config = { codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 192000 };
+      try { const s = await AudioEncoder.isConfigSupported(config); if (s.supported) out.push({ config, mux }); } catch (e) { /* skip */ }
+    }
+  }
+  out.push(null); // last resort: video without sound
+  return out;
 }
 async function drain(enc, max) {
   while (enc.encodeQueueSize > max) await new Promise((r) => { let done = false; const h = () => { if (!done) { done = true; r(); } }; try { enc.addEventListener('dequeue', h, { once: true }); } catch (e) { /* old API */ } setTimeout(h, 20); });
 }
+function tagError(e, stage, frame) {
+  const err = e instanceof Error ? e : new Error(String((e && e.message) || e));
+  if (e && e.name && !err.name) err.name = e.name;
+  err.stage = err.stage || stage; if (frame != null && err.frame == null) err.frame = frame;
+  return err;
+}
 async function renderReel(plan, ui) {
   if (!('VideoEncoder' in window) || !('VideoFrame' in window)) throw new Error('यह ब्राउज़र वीडियो एक्सपोर्ट (WebCodecs) सपोर्ट नहीं करता। Android/Desktop पर Chrome या Edge, या iPhone पर Safari 17+ इस्तेमाल करें।');
-  let { W, H } = plan; const fps = plan.fps; const D = plan.D;
-  let vc = await pickVideoCodec(W, H, fps);
-  if (!vc && W * H > 1280 * 720) {
-    const s = 720 / Math.min(W, H); W = Math.round(W * s / 2) * 2; H = Math.round(H * s / 2) * 2;
-    plan = { ...plan, W, H }; vc = await pickVideoCodec(W, H, fps);
-    ui.note('इस डिवाइस पर 1080p encoder नहीं मिला, 720p में बना रहे हैं।');
-  }
-  if (!vc) throw new Error('कोई सपोर्टेड वीडियो encoder नहीं मिला।');
+  const fps = plan.fps;
+  const sizes = [[plan.W, plan.H]];
+  if (Math.min(plan.W, plan.H) > 720) { const s = 720 / Math.min(plan.W, plan.H); sizes.push([Math.round(plan.W * s / 2) * 2, Math.round(plan.H * s / 2) * 2]); }
+  const attempts = [];
+  for (const [W, H] of sizes) for (const c of await supportedVideo(W, H, fps)) attempts.push({ ...c, W, H });
+  if (!attempts.length) throw new Error('इस डिवाइस पर कोई सपोर्टेड वीडियो encoder नहीं मिला।');
+  const audioOpts = await supportedAudio();
   ui.status('ऑडियो मिक्स बन रहा है…', 0);
   const audio = await renderAudio(plan);
-  const ac = await pickAudioCodec();
-  if (!ac) ui.note('चेतावनी: इस ब्राउज़र में audio encoder नहीं है, रील बिना आवाज़ के बनेगी। Chrome इस्तेमाल करें।');
+  let ai = 0; const tried = []; let lastErr = null;
+  for (let i = 0; i < Math.min(attempts.length, 6); i++) {
+    const vc = attempts[i]; const ac = audioOpts[ai];
+    tried.push(`${vc.label} ${vc.W}×${vc.H}${ac ? '' : ' (no audio)'}`);
+    try {
+      const res = await encodeAttempt({ ...plan, W: vc.W, H: vc.H }, vc, ac, audio, ui);
+      if (!ac) ui.note('चेतावनी: इस फ़ोन पर audio encode नहीं हो पाया, रील बिना आवाज़ के बनी है।');
+      return res;
+    } catch (e) {
+      if (state.cancel || e.message === 'cancelled') throw e;
+      console.error('render attempt failed', tried[tried.length - 1], e);
+      lastErr = e;
+      if (e.stage === 'audio' && ai < audioOpts.length - 1) { ai++; i--; ui.note('Audio encoder में दिक्कत आई, दूसरी audio setting से दोबारा बना रहे हैं…'); continue; }
+      if (i + 1 < Math.min(attempts.length, 6)) ui.note(`Encoder (${vc.label} ${vc.W}×${vc.H}) फेल हुआ, ${attempts[i + 1].label} ${attempts[i + 1].W}×${attempts[i + 1].H} से दोबारा बना रहे हैं…`);
+    }
+  }
+  const e = lastErr || new Error('unknown');
+  const err = new Error(`Render फेल हुआ: ${e.name || 'Error'}: ${e.message}\nStage: ${e.stage || '?'}${e.frame != null ? `, frame ${e.frame}` : ''}\nTried: ${tried.join(' → ')}`);
+  err.details = true;
+  throw err;
+}
+async function encodeAttempt(plan, vc, ac, audio, ui) {
+  const { W, H } = plan; const fps = plan.fps; const D = plan.D;
   const muxer = new Mp4Muxer.Muxer({
     target: new Mp4Muxer.ArrayBufferTarget(),
     video: { codec: vc.mux, width: W, height: H, frameRate: fps },
@@ -1393,23 +1433,35 @@ async function renderReel(plan, ui) {
     fastStart: 'in-memory',
     firstTimestampBehavior: 'offset',
   });
-  let encErr = null;
+  let encErr = null; let stage = 'audio'; let frameNo = null;
+  const fail = (e) => { if (!encErr) encErr = tagError(e, stage, frameNo); };
   if (ac) {
-    const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { encErr = e; } });
-    aenc.configure(ac.config);
-    const L = audio.getChannelData(0), R = audio.getChannelData(1); const len = audio.length;
-    for (let i = 0; i < len; i += 4096) {
-      const n = Math.min(4096, len - i); const data = new Float32Array(n * 2);
-      data.set(L.subarray(i, i + n), 0); data.set(R.subarray(i, i + n), n);
-      const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((i / 48000) * 1e6), data });
-      aenc.encode(ad); ad.close();
-    }
-    await aenc.flush(); aenc.close();
+    let aenc;
+    try {
+      aenc = new AudioEncoder({ output: (c, m) => { try { muxer.addAudioChunk(c, m); } catch (e) { fail(e); } }, error: fail });
+      aenc.configure(ac.config);
+      const Lc = audio.getChannelData(0), Rc = audio.getChannelData(1); const len = audio.length;
+      for (let i = 0; i < len; i += 4096) {
+        const n = Math.min(4096, len - i); const data = new Float32Array(n * 2);
+        data.set(Lc.subarray(i, i + n), 0); data.set(Rc.subarray(i, i + n), n);
+        const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((i / 48000) * 1e6), data });
+        aenc.encode(ad); ad.close();
+        if (encErr) break;
+      }
+      if (!encErr) await aenc.flush();
+    } catch (e) { fail(e); }
+    try { if (aenc && aenc.state !== 'closed') aenc.close(); } catch (e) { /* ignore */ }
     if (encErr) throw encErr;
   }
-  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { encErr = e; } });
-  venc.configure(vc.config);
-  const r = new Renderer(W, H);
+  stage = 'video-setup';
+  let venc;
+  try {
+    venc = new VideoEncoder({ output: (c, m) => { try { muxer.addVideoChunk(c, m); } catch (e) { fail(e); } }, error: fail });
+    venc.configure(vc.config);
+  } catch (e) { throw tagError(e, stage); }
+  const closeV = () => { try { if (venc.state !== 'closed') venc.close(); } catch (e) { /* ignore */ } };
+  let r;
+  try { r = new Renderer(W, H); } catch (e) { closeV(); throw tagError(e, 'webgl'); }
   const out = document.createElement('canvas'); out.width = W; out.height = H;
   const octx = out.getContext('2d');
   ui.preview(out);
@@ -1417,44 +1469,53 @@ async function renderReel(plan, ui) {
   const total = Math.round(D * fps);
   const g = plan.style.grade;
   let si = 0; const t0 = performance.now();
-  for (let f = 0; f < total; f++) {
-    if (state.cancel) { try { venc.close(); } catch (e) { /* ignore */ } throw new Error('cancelled'); }
-    if (encErr) throw encErr;
-    const t = f / fps;
-    while (si < plan.slots.length - 1 && t >= plan.slots[si + 1].start) si++;
-    const fsx = frameState(plan, t, si);
-    const c = fsx.clip; const cfps = c.fps || 30; const v = c.video;
-    const maxK = Math.max(0, Math.floor(c.dur * cfps) - 1);
-    let mix = 0;
-    if (fsx.speed < 0.8) { // frame-blended slow motion
-      const ft = clamp(fsx.srcT * cfps - 0.5, 0, maxK);
-      const k = Math.floor(ft); const k2 = Math.min(maxK, k + 1); mix = k2 > k ? ft - k : 0;
-      const kA = `${c.id}:${k}`, kB = `${c.id}:${k2}`;
-      if (r.key[0] !== kA) {
-        if (r.key[1] === kA) r.swap();
-        else { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+  stage = 'video';
+  try {
+    for (let f = 0; f < total; f++) {
+      frameNo = f;
+      if (state.cancel) throw new Error('cancelled');
+      if (encErr) throw encErr;
+      const t = f / fps;
+      while (si < plan.slots.length - 1 && t >= plan.slots[si + 1].start) si++;
+      const fsx = frameState(plan, t, si);
+      const c = fsx.clip; const cfps = c.fps || 30; const v = c.video;
+      const maxK = Math.max(0, Math.floor(c.dur * cfps) - 1);
+      let mix = 0;
+      if (fsx.speed < 0.8) { // frame-blended slow motion
+        const ft = clamp(fsx.srcT * cfps - 0.5, 0, maxK);
+        const k = Math.floor(ft); const k2 = Math.min(maxK, k + 1); mix = k2 > k ? ft - k : 0;
+        const kA = `${c.id}:${k}`, kB = `${c.id}:${k2}`;
+        if (r.key[0] !== kA) {
+          if (r.key[1] === kA) r.swap();
+          else { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+        }
+        if (mix > 0.001 && r.key[1] !== kB) { await seekTo(v, (k2 + 0.5) / cfps); r.upload(1, v, kB); }
+      } else {
+        const k = clamp(Math.floor(fsx.srcT * cfps), 0, maxK); const kA = `${c.id}:${k}`;
+        if (r.key[0] !== kA) { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
       }
-      if (mix > 0.001 && r.key[1] !== kB) { await seekTo(v, (k2 + 0.5) / cfps); r.upload(1, v, kB); }
-    } else {
-      const k = clamp(Math.floor(fsx.srcT * cfps), 0, maxK); const kA = `${c.id}:${k}`;
-      if (r.key[0] !== kA) { await seekTo(v, (k + 0.5) / cfps); r.upload(0, v, kA); }
+      r.draw({ ...fsx, mix, grade: g, frame: f });
+      octx.drawImage(r.canvas, 0, 0);
+      for (const it of plan.texts) drawTitle(octx, it, t, plan);
+      const vf = new VideoFrame(out, { timestamp: Math.round((f * 1e6) / fps), duration: Math.round(1e6 / fps), alpha: 'discard' });
+      try { venc.encode(vf, { keyFrame: f % (fps * 2) === 0 }); } finally { vf.close(); }
+      await drain(venc, 4);
+      if (f % 3 === 0) {
+        const el = (performance.now() - t0) / 1000; const eta = (el / (f + 1)) * (total - f - 1);
+        ui.status(`Rendering ${f + 1}/${total} frames · ~${Math.ceil(eta)}s बाकी`, (f + 1) / total);
+        await sleep(0);
+      }
     }
-    r.draw({ ...fsx, mix, grade: g, frame: f });
-    octx.drawImage(r.canvas, 0, 0);
-    for (const it of plan.texts) drawTitle(octx, it, t, plan);
-    const vf = new VideoFrame(out, { timestamp: Math.round((f * 1e6) / fps), duration: Math.round(1e6 / fps), alpha: 'discard' });
-    venc.encode(vf, { keyFrame: f % (fps * 2) === 0 });
-    vf.close();
-    await drain(venc, 4);
-    if (f % 3 === 0) {
-      const el = (performance.now() - t0) / 1000; const eta = (el / (f + 1)) * (total - f - 1);
-      ui.status(`Rendering ${f + 1}/${total} frames · ~${Math.ceil(eta)}s बाकी`, (f + 1) / total);
-      await sleep(0);
-    }
+    stage = 'finish';
+    await venc.flush();
+    if (encErr) throw encErr;
+    closeV();
+    muxer.finalize();
+  } catch (e) {
+    closeV();
+    if (e.message === 'cancelled') throw e;
+    throw encErr || tagError(e, stage, frameNo);
   }
-  await venc.flush(); venc.close();
-  if (encErr) throw encErr;
-  muxer.finalize();
   return { blob: new Blob([muxer.target.buffer], { type: 'video/mp4' }), codec: vc.config.codec, audioCodec: ac ? ac.config.codec : null, W, H };
 }
 
@@ -1540,7 +1601,7 @@ async function onRender() {
   if (!state.plan) return;
   showError(null); setBusy(true); state.cancel = false;
   const stage = $('#stage'); stage.classList.remove('hidden');
-  $('#resultActions').classList.add('hidden'); $('#renderCtl').classList.remove('hidden');
+  $('#resultActions').classList.add('hidden'); $('#renderCtl').classList.remove('hidden'); $('#renderErr').classList.add('hidden');
   const scr = $('#screen'); scr.innerHTML = '';
   const rp = $('#renderProgress'); setProgress(rp, 0, 'Starting…');
   $('#renderNote').textContent = 'रेंडर होते समय ऐप खुला रखें और स्क्रीन ऑन रखें।';
@@ -1564,7 +1625,11 @@ async function onRender() {
     $('#renderNote').textContent = res.codec.startsWith('avc1') ? 'Instagram Reels / YouTube Shorts पर सीधे अपलोड करें।' : 'ध्यान दें: इस ब्राउज़र में H.264 encoder नहीं था, इसलिए वीडियो VP9/AV1 में है। Instagram के लिए Chrome (Android) में दोबारा रेंडर करना बेहतर है।';
   } catch (e) {
     console.error(e);
-    if (e.message === 'cancelled') { setProgress(rp, 0, 'Cancelled'); } else { showError(e.message || String(e)); setProgress(rp, 0, 'Failed'); }
+    if (e.message === 'cancelled') { setProgress(rp, 0, 'Cancelled'); } else {
+      const msg = e.details ? e.message : `Render फेल हुआ: ${e.name || 'Error'}: ${e.message || e}${e.stage ? `\nStage: ${e.stage}${e.frame != null ? `, frame ${e.frame}` : ''}` : ''}`;
+      const box = $('#renderErr'); box.textContent = `${msg}\n\nइस मैसेज का screenshot भेजें। Tip: Settings में Quality 720p करके दोबारा try करें।`; box.classList.remove('hidden');
+      setProgress(rp, 0, 'Failed');
+    }
     $('#renderCtl').classList.add('hidden');
   } finally {
     setBusy(false);
