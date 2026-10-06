@@ -8,10 +8,11 @@ Upload your own camera clips, describe the vibe, and get a beat-synced, colour-g
 ## कैसे इस्तेमाल करें (How to use)
 
 1. **Clips**: एक या ज़्यादा वीडियो चुनें।
-2. **Music** (optional): कोई गाना डालें। ऐप उसकी BPM और "drop" ढूँढता है। Cuts बीट पर लगते हैं और drop ठीक hero slow-mo shot पर आता है। गाना न डालें तो ऐप खुद एक cinematic background score और sound effects बनाता है।
-3. **Prompt**: जैसे `Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"`। Quotes में लिखा text रील पर title बनकर आता है।
-4. **Analyze & Plan**: ऐप फुटेज analyze करके एक shot-by-shot edit plan दिखाता है। पसंद न आए तो **दूसरा वर्ज़न** दबाएँ।
-5. **Render Reel**: MP4 बनती है। फिर Download या Share (Android पर सीधे Instagram/YouTube में) करें।
+2. **Music** (optional): "Add music" दबाएँ। Instagram जैसी music sheet खुलती है: गाने search करें, mood चुनें (Cinematic, Workout, Lofi…), ▶ से preview सुनें, **Use** दबाएँ। अपने फ़ोन का गाना "From phone" से डालें। ऐप उसकी BPM और "drop" ढूँढता है। Cuts बीट पर लगते हैं और drop ठीक hero slow-mo shot पर आता है। गाना न डालें तो ऐप खुद एक cinematic background score और sound effects बनाता है।
+3. **Duration**: 10s से 60s तक के बटन। **Auto** प्रॉम्प्ट से लंबाई पढ़ता है (जैसे "20 seconds duration"), नहीं तो 15s।
+4. **Prompt**: जैसे `Epic cinematic travel reel, slow motion at the peak, close-ups, "GOA DIARIES"`। Quotes में लिखा text रील पर title बनकर आता है।
+5. **Analyze & Plan**: ऐप फुटेज analyze करके एक shot-by-shot edit plan दिखाता है। पसंद न आए तो **दूसरा वर्ज़न** दबाएँ।
+6. **Render Reel**: MP4 बनती है। फिर Download या Share (Android पर सीधे Instagram/YouTube में) करें।
 
 ### Prompt में क्या-क्या समझता है
 
@@ -48,6 +49,13 @@ Settings panel में style, duration, format (9:16, 4:5, 1:1, 16:9), quality
 5. **Audio**: music या generated score, original clip sound, और synthesized SFX (whoosh, boom, hit, riser) का mix, normalized।
 6. **Export**: WebCodecs से H.264 + AAC MP4। जहाँ H.264 नहीं है वहाँ VP9/AV1 + Opus।
 
+## Music library
+
+- गाने [Openverse](https://openverse.org) से आते हैं: Creative Commons music (ज़्यादातर Jamendo) जिसे commercially इस्तेमाल और edit करना allowed है (CC0, CC BY, CC BY-SA, public domain)।
+- CC BY गानों के लिए credit देना ज़रूरी है। ऐप credit text दिखाता है, Copy बटन देता है, और Share करते समय उसे text में जोड़ता है।
+- Bollywood / Instagram trending गाने licensed हैं, इसलिए वे यहाँ नहीं मिल सकते। उन्हें "From phone" से डालें, या Instagram में post करते समय वहीं से जोड़ें।
+- `api/music.js` (search) और `api/audio.js` (गाना chunks में download) Vercel serverless functions हैं। Song hosts browser को सीधे download नहीं करने देते (CORS), इसलिए ये ज़रूरी हैं। `api/audio.js` सिर्फ़ Openverse में listed track id ही download करता है, इसलिए यह open proxy नहीं है।
+
 ## Browser support
 
 - **Best**: Android पर Chrome। Desktop पर Chrome या Edge। इनमें H.264 + AAC मिलता है, जो Instagram के लिए सही है।
@@ -59,7 +67,7 @@ Settings panel में style, duration, format (9:16, 4:5, 1:1, 16:9), quality
 
 यह plain static files हैं: `index.html` और `vendor/mp4-muxer.js`। कोई build step नहीं है। WebCodecs को HTTPS (या localhost) चाहिए। इसलिए इसे GitHub Pages, Netlify या Cloudflare Pages पर डालें।
 
-Local चलाने के लिए:
+Local चलाने के लिए (music library के लिए `npx vercel dev` चाहिए, बाकी ऐप किसी भी static server पर चलता है):
 
 ```
 npx http-server . -p 8765
@@ -82,6 +90,9 @@ npx http-server . -p 8765
 npx http-server . -p 8765 &
 node tests/smoke.mjs clip1.mp4 clip2.mp4 --music song.mp3 --prompt 'Epic travel reel "GOA"' --out out.mp4
 ffprobe out.mp4
+
+# music library flow (serverless handlers + fake Openverse, no network needed)
+node tests/music.mjs song.wav clip.mp4 --url http://localhost:8765/index.html
 ```
 
 ## Third-party
